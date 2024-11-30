@@ -41,7 +41,6 @@ _config = {
     Platforms.PROSPERO:       ('SCE_PROSPERO_SDK_DIR', 'host_tools/bin/prospero-wave-psslc.exe'),
     Platforms.XBOX:           ('GXDKLATEST', 'bin/XboxOne/dxc.exe'),
     Platforms.SCARLETT:       ('GXDKLATEST', 'bin/Scarlett/dxc.exe'),
-    Platforms.ANDROID_GLES:   ('FSL_COMPILER_GLES', 'glslangValidator.exe'),
 }
 
 def get_available_compilers():
@@ -94,11 +93,14 @@ def util_shadertarget_dx(stage, features):
         for feature in features:
             if feature in dx_levels:
                 level_dx = max(level_dx, dx_levels[feature])
+    if stage is Stages.GRAPH:
+        level_dx = max(level_dx, '_6_8')
     stage_dx = {
         Stages.VERT: 'vs',
         Stages.FRAG: 'ps',
         Stages.COMP: 'cs',
         Stages.GEOM: 'gs',
+        Stages.GRAPH: 'lib',
     }
     return stage_dx[stage] + level_dx
 
@@ -247,13 +249,6 @@ def compile_binary(platform: Platforms, debug: bool, binary: ShaderBinary, src, 
             params += ['/T', util_shadertarget_dx(binary.stage, binary.features)]
             params += ['/I', fsl_basepath]
             params += ['/Fo', compiled_filepath, src]
-
-        elif platform == Platforms.ANDROID_GLES:
-            compiled_filepath = dst + f'_{len(compiled_derivatives)}.glsl'
-
-            params = [src, '-I'+fsl_basepath]
-            params += ['-S', binary.stage.name.lower()]
-            shutil.copy(src, compiled_filepath)
 
         elif platform == Platforms.MACOS:
             compiled_filepath = dst + f'_{len(compiled_derivatives)}.air'

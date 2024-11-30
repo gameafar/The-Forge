@@ -40,7 +40,7 @@ clangFormatExe = os.path.join(scriptDirPath, systemName, "clang-format") + (".ex
 assert(os.path.isfile(clangFormatExe))
 clangFormatArgs = "-i --style=file --fallback-style=none"
 
-dirExcludeRegex = re.compile("\.(git|vs|cache|codelite)|^(Art|Documents|Jenkins|Scripts|Tools)|(ForgeShadingLanguage|Shaders|ThirdParty|Debug|Release)$")
+dirExcludeRegex = re.compile("\.(git|vs|cache|codelite)|^(Art|Data|Documents|Jenkins|Scripts|Tools|Libraries)|(ForgeShadingLanguage|Shaders|ThirdParty|Debug|Release|WebGpu)$")
 fileExtensions = (".h", ".hpp", ".hxx", ".c", ".cpp", ".cxx", ".inc", ".m", ".mm", ".java")
 filesToFormat = []
 
@@ -203,6 +203,6 @@ if __name__ == "__main__":
 
                 proc = subprocess.run(f'{command} "{fileToFormat}"', shell=True)
                 if proc.returncode != 0:
-                    exitCode = proc.returnCode
+                    exitCode = proc.returncode
 
     exit(exitCode)

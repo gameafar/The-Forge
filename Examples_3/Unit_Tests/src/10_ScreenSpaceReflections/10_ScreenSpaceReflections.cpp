@@ -29,7 +29,7 @@
 #include "../../../../Common_3/Application/Interfaces/IApp.h"
 #include "../../../../Common_3/Application/Interfaces/ICameraController.h"
 #include "../../../../Common_3/Application/Interfaces/IFont.h"
-#include "../../../../Common_3/Application/Interfaces/IInput.h"
+#include "../../../../Common_3/OS/Interfaces/IInput.h"
 #include "../../../../Common_3/Application/Interfaces/IProfiler.h"
 #include "../../../../Common_3/Application/Interfaces/IScreenshot.h"
 #include "../../../../Common_3/Application/Interfaces/IUI.h"
@@ -342,11 +342,10 @@ RootSignature* pRootSignatureTriangleFiltering = NULL;
 DescriptorSet* pDescriptorSetTriangleFiltering[2] = { NULL };
 
 // VB pass pipeline
-Shader*           pShaderVBBufferPass[gNumGeomSets] = {};
-Pipeline*         pPipelineVBBufferPass[gNumGeomSets] = {};
-RootSignature*    pRootSignatureVBPass = NULL;
-DescriptorSet*    pDescriptorSetVBPass[2] = { NULL };
-CommandSignature* pCmdSignatureVBPass = NULL;
+Shader*        pShaderVBBufferPass[gNumGeomSets] = {};
+Pipeline*      pPipelineVBBufferPass[gNumGeomSets] = {};
+RootSignature* pRootSignatureVBPass = NULL;
+DescriptorSet* pDescriptorSetVBPass[2] = { NULL };
 
 // VB shade pipeline
 Shader*        pShaderVBShade = NULL;
@@ -401,41 +400,35 @@ RootSignature* pSSSR_PrepareIndirectArgsRootSignature = NULL;
 Pipeline*      pSSSR_PrepareIndirectArgsPipeline = NULL;
 DescriptorSet* pDescriptorSetSSSR_PrepareIndirectArgs = NULL;
 
-Shader*           pSSSR_IntersectShader = NULL;
-RootSignature*    pSSSR_IntersectRootSignature = NULL;
-Pipeline*         pSSSR_IntersectPipeline = NULL;
-CommandSignature* pSSSR_IntersectCommandSignature = NULL;
-DescriptorSet*    pDescriptorSetSSSR_Intersect = NULL;
+Shader*        pSSSR_IntersectShader = NULL;
+RootSignature* pSSSR_IntersectRootSignature = NULL;
+Pipeline*      pSSSR_IntersectPipeline = NULL;
+DescriptorSet* pDescriptorSetSSSR_Intersect = NULL;
 
-Shader*           pSSSR_ResolveSpatialShader = NULL;
-RootSignature*    pSSSR_ResolveSpatialRootSignature = NULL;
-Pipeline*         pSSSR_ResolveSpatialPipeline = NULL;
-CommandSignature* pSSSR_ResolveSpatialCommandSignature = NULL;
-DescriptorSet*    pDescriptorSetSSSR_ResolveSpatial = NULL;
+Shader*        pSSSR_ResolveSpatialShader = NULL;
+RootSignature* pSSSR_ResolveSpatialRootSignature = NULL;
+Pipeline*      pSSSR_ResolveSpatialPipeline = NULL;
+DescriptorSet* pDescriptorSetSSSR_ResolveSpatial = NULL;
 
-Shader*           pSSSR_ResolveTemporalShader = NULL;
-RootSignature*    pSSSR_ResolveTemporalRootSignature = NULL;
-Pipeline*         pSSSR_ResolveTemporalPipeline = NULL;
-CommandSignature* pSSSR_ResolveTemporalCommandSignature = NULL;
-DescriptorSet*    pDescriptorSetSSSR_ResolveTemporal = NULL;
+Shader*        pSSSR_ResolveTemporalShader = NULL;
+RootSignature* pSSSR_ResolveTemporalRootSignature = NULL;
+Pipeline*      pSSSR_ResolveTemporalPipeline = NULL;
+DescriptorSet* pDescriptorSetSSSR_ResolveTemporal = NULL;
 
-Shader*           pSSSR_ResolveEAWShader = NULL;
-RootSignature*    pSSSR_ResolveEAWRootSignature = NULL;
-Pipeline*         pSSSR_ResolveEAWPipeline = NULL;
-CommandSignature* pSSSR_ResolveEAWCommandSignature = NULL;
-DescriptorSet*    pDescriptorSetSSSR_ResolveEAW = NULL;
+Shader*        pSSSR_ResolveEAWShader = NULL;
+RootSignature* pSSSR_ResolveEAWRootSignature = NULL;
+Pipeline*      pSSSR_ResolveEAWPipeline = NULL;
+DescriptorSet* pDescriptorSetSSSR_ResolveEAW = NULL;
 
-Shader*           pSSSR_ResolveEAWStride2Shader = NULL;
-RootSignature*    pSSSR_ResolveEAWStride2RootSignature = NULL;
-Pipeline*         pSSSR_ResolveEAWStride2Pipeline = NULL;
-CommandSignature* pSSSR_ResolveEAWStride2CommandSignature = NULL;
-DescriptorSet*    pDescriptorSetSSSR_ResolveEAWStride2 = NULL;
+Shader*        pSSSR_ResolveEAWStride2Shader = NULL;
+RootSignature* pSSSR_ResolveEAWStride2RootSignature = NULL;
+Pipeline*      pSSSR_ResolveEAWStride2Pipeline = NULL;
+DescriptorSet* pDescriptorSetSSSR_ResolveEAWStride2 = NULL;
 
-Shader*           pSSSR_ResolveEAWStride4Shader = NULL;
-RootSignature*    pSSSR_ResolveEAWStride4RootSignature = NULL;
-Pipeline*         pSSSR_ResolveEAWStride4Pipeline = NULL;
-CommandSignature* pSSSR_ResolveEAWStride4CommandSignature = NULL;
-DescriptorSet*    pDescriptorSetSSSR_ResolveEAWStride4 = NULL;
+Shader*        pSSSR_ResolveEAWStride4Shader = NULL;
+RootSignature* pSSSR_ResolveEAWStride4RootSignature = NULL;
+Pipeline*      pSSSR_ResolveEAWStride4Pipeline = NULL;
+DescriptorSet* pDescriptorSetSSSR_ResolveEAWStride4 = NULL;
 
 Buffer*                  pSSSR_ConstantsBuffer[gDataBufferCount] = { NULL };
 UniformSSSRConstantsData gUniformSSSRConstantsData;
@@ -490,8 +483,8 @@ UniformDirectionalLightData gUniformDataDirectionalLights;
 Buffer*              pBufferUniformPlaneInfo[gDataBufferCount] = { NULL };
 UniformPlaneInfoData gUniformDataPlaneInfo;
 
-Buffer*             pBufferVBConstants[gDataBufferCount] = { NULL };
-PerFrameVBConstants gVBConstants[gDataBufferCount] = {};
+Buffer*                 pBufferVBConstants[gDataBufferCount] = { NULL };
+PerFrameVBConstantsData gVBConstants[gDataBufferCount] = {};
 
 PerFrameData gPerFrameData[gDataBufferCount] = {};
 
@@ -526,17 +519,20 @@ Texture** gSpecularMapsStorage = NULL;
 VBMeshInstance*  pVBMeshInstances = NULL;
 VBPreFilterStats gVBPreFilterStats[gDataBufferCount] = {};
 
+Scene*    pScene = NULL;
 Geometry* pSanMiguelModel;
 uint32_t  gMeshCount = 0;
 uint32_t  gMaterialCount = 0;
 mat4      gSanMiguelModelMat;
 
-const char* gTestScripts[] = { "Test_RenderScene.lua", "Test_RenderReflections.lua", "Test_RenderSceneReflections.lua",
-                               "Test_RenderSceneExReflections.lua" };
+const char* gTestScripts[] = { "10_ScreenSpaceReflections/Test_RenderScene.lua", "10_ScreenSpaceReflections/Test_RenderReflections.lua",
+                               "10_ScreenSpaceReflections/Test_RenderSceneReflections.lua",
+                               "10_ScreenSpaceReflections/Test_RenderSceneExReflections.lua" };
 uint32_t    gCurrentScriptIndex = 0;
 
 void RunScript(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     LuaScriptDesc runDesc = {};
     runDesc.pScriptFileName = gTestScripts[gCurrentScriptIndex];
     luaQueueScriptToRun(&runDesc);
@@ -554,15 +550,6 @@ public:
 
     bool Init()
     {
-        // FILE PATHS
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_MESHES, "Meshes");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Fonts");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
-        fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_SCREENSHOTS, "Screenshots");
-        fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_DEBUG, "Debug");
-
         InitAppSettings();
 
         INIT_STRUCT(gSettings);
@@ -576,10 +563,15 @@ public:
         memset(&settings, 0, sizeof(settings));
         settings.pExtendedSettings = &extendedSettings;
         settings.mShaderTarget = SHADER_TARGET_6_0;
+        initGPUConfiguration(settings.pExtendedSettings);
         initRenderer(GetName(), &settings, &pRenderer);
         // check for init success
         if (!pRenderer)
+        {
+            ShowUnsupportedMessage("Failed To Initialize renderer!");
             return false;
+        }
+        setupGPUConfigurationPlatformParameters(pRenderer, settings.pExtendedSettings);
 
         if (!gSettings.mBindlessSupported)
         {
@@ -587,7 +579,7 @@ public:
             return false;
         }
 
-        if (!pRenderer->pGpu->mSettings.mPrimitiveIdSupported)
+        if (!pRenderer->pGpu->mPrimitiveIdSupported)
         {
             ShowUnsupportedMessage("Visibility Buffer does not run on this device. PrimitiveID is not supported");
             return false;
@@ -598,26 +590,26 @@ public:
 #if defined(ANDROID)
         gSSSRSupported = false;
 #else
-        gSSSRSupported = (pRenderer->pGpu->mSettings.mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_BASIC_BIT) &&
-                         (pRenderer->pGpu->mSettings.mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_SHUFFLE_BIT) &&
-                         (pRenderer->pGpu->mSettings.mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_BALLOT_BIT) &&
-                         (pRenderer->pGpu->mSettings.mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_VOTE_BIT);
+        gSSSRSupported = (pRenderer->pGpu->mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_BASIC_BIT) &&
+                         (pRenderer->pGpu->mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_SHUFFLE_BIT) &&
+                         (pRenderer->pGpu->mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_BALLOT_BIT) &&
+                         (pRenderer->pGpu->mWaveOpsSupportFlags & WAVE_OPS_SUPPORT_FLAG_VOTE_BIT);
 #endif
         gLastReflectionType = gReflectionType = gSSSRSupported ? SSS_REFLECTION : PP_REFLECTION;
 
         QueueDesc queueDesc = {};
         queueDesc.mType = QUEUE_TYPE_GRAPHICS;
         queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
-        addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
+        initQueue(pRenderer, &queueDesc, &pGraphicsQueue);
 
         GpuCmdRingDesc cmdRingDesc = {};
         cmdRingDesc.pQueue = pGraphicsQueue;
         cmdRingDesc.mPoolCount = gDataBufferCount;
         cmdRingDesc.mCmdPerPoolCount = 1;
         cmdRingDesc.mAddSyncPrimitives = true;
-        addGpuCmdRing(pRenderer, &cmdRingDesc, &gGraphicsCmdRing);
+        initGpuCmdRing(pRenderer, &cmdRingDesc, &gGraphicsCmdRing);
 
-        addSemaphore(pRenderer, &pImageAcquiredSemaphore);
+        initSemaphore(pRenderer, &pImageAcquiredSemaphore);
 
         initResourceLoaderInterface(pRenderer);
 
@@ -642,28 +634,21 @@ public:
             scriptDescs[i].pScriptFileName = gTestScripts[i];
         luaDefineScripts(scriptDescs, numScripts);
 
-        UIComponentDesc guiDesc = {};
-        guiDesc.mStartPosition = vec2(mSettings.mWidth * 0.01f, mSettings.mHeight * 0.25f);
-        uiCreateComponent("Screen Space Reflections", &guiDesc, &pGui);
-
         // Initialize micro profiler and its UI.
         ProfilerDesc profiler = {};
         profiler.pRenderer = pRenderer;
-        profiler.mWidthUI = mSettings.mWidth;
-        profiler.mHeightUI = mSettings.mHeight;
         initProfiler(&profiler);
 
-        gPPRGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
-        gSSSRGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
+        gPPRGpuProfileToken = initGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
+        gSSSRGpuProfileToken = initGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
         gCurrentGpuProfileToken = gSSSRGpuProfileToken;
 
         ComputePBRMaps();
 
         // Some texture format are not well covered on android devices (R32G32_SFLOAT, R32G32B32A32_SFLOAT)
         // albedo texture use TinyImageFormat_DXBC1_RGBA_UNORM, might need an other sampler
-        bool supportLinearFiltering =
-            (pRenderer->pGpu->mCapBits.mFormatCaps[TinyImageFormat_R32G32B32A32_SFLOAT] & FORMAT_CAP_LINEAR_FILTER) &&
-            (pRenderer->pGpu->mCapBits.mFormatCaps[TinyImageFormat_R32G32_SFLOAT] & FORMAT_CAP_LINEAR_FILTER);
+        bool supportLinearFiltering = (pRenderer->pGpu->mFormatCaps[TinyImageFormat_R32G32B32A32_SFLOAT] & FORMAT_CAP_LINEAR_FILTER) &&
+                                      (pRenderer->pGpu->mFormatCaps[TinyImageFormat_R32G32_SFLOAT] & FORMAT_CAP_LINEAR_FILTER);
 
         SamplerDesc samplerDesc = {};
         samplerDesc.mMinFilter = supportLinearFiltering ? FILTER_LINEAR : FILTER_NEAREST;
@@ -674,7 +659,7 @@ public:
         samplerDesc.mAddressW = ADDRESS_MODE_REPEAT;
         addSampler(pRenderer, &samplerDesc, &pSamplerBilinear);
 
-        supportLinearFiltering = pRenderer->pGpu->mCapBits.mFormatCaps[TinyImageFormat_DXBC1_RGBA_UNORM] & FORMAT_CAP_LINEAR_FILTER;
+        supportLinearFiltering = pRenderer->pGpu->mFormatCaps[TinyImageFormat_DXBC1_RGBA_UNORM] & FORMAT_CAP_LINEAR_FILTER;
 
         samplerDesc = {};
         samplerDesc.mMinFilter = supportLinearFiltering ? FILTER_LINEAR : FILTER_NEAREST;
@@ -788,7 +773,7 @@ public:
             BufferLoadDesc vbConstantUBDesc = {};
             vbConstantUBDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             vbConstantUBDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-            vbConstantUBDesc.mDesc.mSize = sizeof(PerFrameVBConstants);
+            vbConstantUBDesc.mDesc.mSize = sizeof(PerFrameVBConstantsData);
             vbConstantUBDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
             vbConstantUBDesc.mDesc.pName = "PerFrameVBConstants Buffer Desc";
             vbConstantUBDesc.pData = NULL;
@@ -998,26 +983,26 @@ public:
         // Point light
         Light light = {};
         light.mCol = vec4(1.0f, 0.5f, 0.1f, 0.0f);
-        light.mPos = vec4(-12.5f, -3.5f, 4.7f, 0.0f);
-        light.mRadius = 10.0f;
+        light.mPos = vec4(15.0f, 40.0f, 4.7f, 0.0f);
+        light.mRadius = 30.0f;
         light.mIntensity = 1.0f;
         gUniformDataLights.mLights[0] = light;
 
-        light.mCol = vec4(1.0f, 0.5f, 0.1f, 0.0f);
-        light.mPos = vec4(-12.5f, -3.5f, -3.7f, 0.0f);
-        light.mRadius = 10.0f;
+        light.mCol = vec4(1.0f, 0.1f, 0.5f, 0.0f);
+        light.mPos = vec4(-25.0f, 40.0f, -3.7f, 0.0f);
+        light.mRadius = 30.0f;
         light.mIntensity = 1.0f;
         gUniformDataLights.mLights[1] = light;
 
-        light.mCol = vec4(1.0f, 0.5f, 0.1f, 0.0f);
-        light.mPos = vec4(9.5f, -3.5f, 4.7f, 0.0f);
-        light.mRadius = 10.0f;
+        light.mCol = vec4(0.5f, 1.0f, 0.1f, 0.0f);
+        light.mPos = vec4(40.0f, 40.0f, 4.7f, 0.0f);
+        light.mRadius = 30.0f;
         light.mIntensity = 1.0f;
         gUniformDataLights.mLights[2] = light;
 
-        light.mCol = vec4(1.0f, 0.5f, 0.1f, 0.0f);
-        light.mPos = vec4(9.5f, -3.5f, -3.7f, 0.0f);
-        light.mRadius = 10.0f;
+        light.mCol = vec4(0.5f, 0.1f, 1.0f, 0.0f);
+        light.mPos = vec4(-60.0f, 40.0f, -3.7f, 0.0f);
+        light.mRadius = 30.0f;
         light.mIntensity = 1.0f;
         gUniformDataLights.mLights[3] = light;
 
@@ -1039,186 +1024,13 @@ public:
         memcpy(directionalLightBuffUpdateDesc.pMappedData, &gUniformDataDirectionalLights, sizeof(gUniformDataDirectionalLights));
         endUpdateResource(&directionalLightBuffUpdateDesc);
 
-        static const char* enumRenderModeNames[] = { "Render Scene Only", "Render Reflections Only", "Render Scene with Reflections",
-                                                     "Render Scene with exclusive Reflections" };
-
-        static const char* enumReflectionTypeNames[] = { "Pixel Projected Reflections", "Stochastic Screen Space Reflections" };
-
-        DropdownWidget ddRenderMode;
-        ddRenderMode.pData = &gRenderMode;
-        ddRenderMode.pNames = enumRenderModeNames;
-        ddRenderMode.mCount = sizeof(enumRenderModeNames) / sizeof(enumRenderModeNames[0]);
-        luaRegisterWidget(uiCreateComponentWidget(pGui, "Render Mode", &ddRenderMode, WIDGET_TYPE_DROPDOWN));
-
-        DropdownWidget ddReflType;
-        ddReflType.pData = &gReflectionType;
-        ddReflType.pNames = enumReflectionTypeNames;
-        ddReflType.mCount = sizeof(enumReflectionTypeNames) / sizeof(enumReflectionTypeNames[0]);
-        luaRegisterWidget(uiCreateComponentWidget(pGui, "Reflection Type", &ddReflType, WIDGET_TYPE_DROPDOWN));
-
-        SliderFloatWidget ground;
-        ground.pData = &gUniformDataExtenedCamera.mGroundRoughness;
-        ground.mMax = 1.0f;
-        ground.mMin = 0.0f;
-        luaRegisterWidget(uiCreateComponentWidget(pGui, "Ground roughness", &ground, WIDGET_TYPE_SLIDER_FLOAT));
-        ground.pData = &gUniformDataExtenedCamera.mGroundMetallic;
-        luaRegisterWidget(uiCreateComponentWidget(pGui, "Ground metallic", &ground, WIDGET_TYPE_SLIDER_FLOAT));
-
-        CheckboxWidget useEnvMap;
-        useEnvMap.pData = &gUseEnvMap;
-        luaRegisterWidget(uiCreateComponentWidget(pGui, "Use Env map", &useEnvMap, WIDGET_TYPE_CHECKBOX));
-
-        Color3PickerWidget envColor;
-        envColor.pData = &gUniformDataExtenedCamera.mEnvColor;
-        luaRegisterWidget(uiCreateComponentWidget(pGui, "Env color", &envColor, WIDGET_TYPE_COLOR3_PICKER));
-
-        CheckboxWidget holePatchCheck;
-        holePatchCheck.pData = &gUseHolePatching;
-        luaRegisterWidget(uiCreateDynamicWidgets(&PPR_Widgets, "Use Holepatching", &holePatchCheck, WIDGET_TYPE_CHECKBOX));
-
-        CheckboxWidget holePatchExpCheck;
-        holePatchExpCheck.pData = &gUseExpensiveHolePatching;
-        luaRegisterWidget(uiCreateDynamicWidgets(&PPR_Widgets, "Use Expensive Holepatching", &holePatchExpCheck, WIDGET_TYPE_CHECKBOX));
-
-        // pGui->AddWidget(CheckboxWidget("Use Normalmap", &gUseNormalMap));
-
-        CheckboxWidget fadeCheck;
-        fadeCheck.pData = &gUseFadeEffect;
-        luaRegisterWidget(uiCreateDynamicWidgets(&PPR_Widgets, "Use Fade Effect", &fadeCheck, WIDGET_TYPE_CHECKBOX));
-
-        SliderFloatWidget pprIntensitySlider;
-        pprIntensitySlider.pData = &gRRP_Intensity;
-        pprIntensitySlider.mMin = 0.0f;
-        pprIntensitySlider.mMax = 1.0f;
-        luaRegisterWidget(uiCreateDynamicWidgets(&PPR_Widgets, "Intensity of PPR", &pprIntensitySlider, WIDGET_TYPE_SLIDER_FLOAT));
-
-        SliderUintWidget numPlanesSlider;
-        numPlanesSlider.pData = &gPlaneNumber;
-        numPlanesSlider.mMin = 1;
-        numPlanesSlider.mMax = 4;
-        luaRegisterWidget(uiCreateDynamicWidgets(&PPR_Widgets, "Number of Planes", &numPlanesSlider, WIDGET_TYPE_SLIDER_UINT));
-
-        SliderFloatWidget mainPlaneSizeSlider;
-        mainPlaneSizeSlider.pData = &gPlaneSize;
-        mainPlaneSizeSlider.mMin = 5.0f;
-        mainPlaneSizeSlider.mMax = 500.0;
-        luaRegisterWidget(uiCreateDynamicWidgets(&PPR_Widgets, "Size of Main Plane", &mainPlaneSizeSlider, WIDGET_TYPE_SLIDER_FLOAT));
-
-        SliderFloatWidget nonMainPlaneRotSlider;
-        nonMainPlaneRotSlider.pData = &gPlaneRotationOffset;
-        nonMainPlaneRotSlider.mMin = -180.0f;
-        nonMainPlaneRotSlider.mMax = 180.0f;
-        luaRegisterWidget(
-            uiCreateDynamicWidgets(&PPR_Widgets, "Rotation of Non-Main Planes", &nonMainPlaneRotSlider, WIDGET_TYPE_SLIDER_FLOAT));
-
-        CheckboxWidget debugNonProjected;
-        debugNonProjected.pData = &gDebugNonProjectedPixels;
-        luaRegisterWidget(uiCreateDynamicWidgets(&PPR_Widgets, "Debug Non Projected Pixels", &debugNonProjected, WIDGET_TYPE_CHECKBOX));
-
-        if (gSSSRSupported)
-        {
-            OneLineCheckboxWidget olCheckbox;
-            olCheckbox.pData = &gUseSPD;
-            olCheckbox.mColor = float4(1.f);
-            luaRegisterWidget(
-                uiCreateDynamicWidgets(&SSSR_Widgets, "Use Singlepass Downsampler", &olCheckbox, WIDGET_TYPE_ONE_LINE_CHECKBOX));
-
-            olCheckbox.pData = &gSSSR_SkipDenoiser;
-            olCheckbox.mColor = float4(1.f);
-            luaRegisterWidget(
-                uiCreateDynamicWidgets(&SSSR_Widgets, "Show Intersection Results", &olCheckbox, WIDGET_TYPE_ONE_LINE_CHECKBOX));
-
-            SliderUintWidget uintSlider;
-            uintSlider.pData = &gSSSR_MaxTravelsalIntersections;
-            uintSlider.mMin = 0;
-            uintSlider.mMax = 256;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "Max Traversal Iterations", &uintSlider, WIDGET_TYPE_SLIDER_UINT));
-
-            uintSlider.pData = &gSSSR_MinTravelsalOccupancy;
-            uintSlider.mMin = 0;
-            uintSlider.mMax = 32;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "Min Traversal Occupancy", &uintSlider, WIDGET_TYPE_SLIDER_UINT));
-
-            uintSlider.pData = &gSSSR_MostDetailedMip;
-            uintSlider.mMin = 0;
-            uintSlider.mMax = 5;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "Most Detailed Level", &uintSlider, WIDGET_TYPE_SLIDER_UINT));
-
-            SliderFloatWidget floatSlider;
-            floatSlider.pData = &gSSSR_DepthThickness;
-            floatSlider.mMin = 0.0f;
-            floatSlider.mMax = 0.3f;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "Depth Buffer Thickness", &floatSlider, WIDGET_TYPE_SLIDER_FLOAT));
-
-            floatSlider.pData = &gSSSR_RougnessThreshold;
-            floatSlider.mMin = 0.0f;
-            floatSlider.mMax = 1.0f;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "Roughness Threshold", &floatSlider, WIDGET_TYPE_SLIDER_FLOAT));
-
-            floatSlider.pData = &pSSSR_TemporalStability;
-            floatSlider.mMin = 0.0f;
-            floatSlider.mMax = 1.0f;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "Temporal Stability", &floatSlider, WIDGET_TYPE_SLIDER_FLOAT));
-
-            olCheckbox.pData = &gSSSR_TemporalVarianceEnabled;
-            olCheckbox.mColor = float4(1.f);
-            luaRegisterWidget(
-                uiCreateDynamicWidgets(&SSSR_Widgets, "Enable Variance Guided Tracing", &olCheckbox, WIDGET_TYPE_ONE_LINE_CHECKBOX));
-
-            RadioButtonWidget radiobutton;
-            radiobutton.pData = &gSSSR_SamplesPerQuad;
-            radiobutton.mRadioId = 1;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "1 Sample Per Quad", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
-
-            radiobutton.pData = &gSSSR_SamplesPerQuad;
-            radiobutton.mRadioId = 2;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "2 Sample Per Quad", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
-
-            radiobutton.pData = &gSSSR_SamplesPerQuad;
-            radiobutton.mRadioId = 4;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "4 Sample Per Quad", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
-
-            radiobutton.pData = &gSSSR_EAWPassCount;
-            radiobutton.mRadioId = 1;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "1 EAW Pass", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
-
-            radiobutton.pData = &gSSSR_EAWPassCount;
-            radiobutton.mRadioId = 3;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "3 EAW Pass", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
-        }
-        else
-        {
-            LabelWidget notSupportedLabel;
-            luaRegisterWidget(uiCreateDynamicWidgets(&SSSR_Widgets, "Not supported by your GPU", &notSupportedLabel, WIDGET_TYPE_LABEL));
-        }
-
-        DropdownWidget ddTestScripts;
-        ddTestScripts.pData = &gCurrentScriptIndex;
-        ddTestScripts.pNames = gTestScripts;
-        ddTestScripts.mCount = sizeof(gTestScripts) / sizeof(gTestScripts[0]);
-        luaRegisterWidget(uiCreateComponentWidget(pGui, "Test Scripts", &ddTestScripts, WIDGET_TYPE_DROPDOWN));
-
-        ButtonWidget bRunScript;
-        UIWidget*    pRunScript = uiCreateComponentWidget(pGui, "Run", &bRunScript, WIDGET_TYPE_BUTTON);
-        uiSetWidgetOnEditedCallback(pRunScript, nullptr, RunScript);
-        luaRegisterWidget(pRunScript);
-
-        if (gReflectionType == PP_REFLECTION)
-        {
-            uiShowDynamicWidgets(&PPR_Widgets, pGui);
-        }
-        else if (gReflectionType == SSS_REFLECTION)
-        {
-            uiShowDynamicWidgets(&SSSR_Widgets, pGui);
-        }
-
         // We need to allocate enough indices for the entire scene
         uint32_t visibilityBufferFilteredIndexCount[NUM_GEOMETRY_SETS] = {};
 
         GeometryLoadDesc sceneLoadDesc = {};
-        Scene*           pScene = loadSanMiguel(&sceneLoadDesc, gResourceSyncToken, false);
+        pScene = initSanMiguel(&sceneLoadDesc, gResourceSyncToken, false);
 
-        gSanMiguelModelMat = mat4::scale({ SCENE_SCALE, SCENE_SCALE, SCENE_SCALE }) * mat4::identity();
+        gSanMiguelModelMat = mat4::scale(vec3(SCENE_SCALE));
         gMeshCount = pScene->geom->mDrawArgCount;
         gMaterialCount = pScene->geom->mDrawArgCount;
         pSanMiguelModel = pScene->geom;
@@ -1308,121 +1120,25 @@ public:
         /************************************************************************/
         ////////////////////////////////////////////////
 
-        CameraMotionParameters camParameters{ 100.0f, 150.0f, 300.0f };
-        vec3                   camPos{ 98.2f, 47.2f, 70.75f };
-        vec3                   lookAt{ 1.0f, 20.5f, 30.0f };
+        CameraMotionParameters camParameters{ 200.0f, 150.0f, 300.0f };
+        vec3                   camPos{ 95.5f, 47.2f, 70.75f };
+        vec3                   lookAt{ -1.67f, 9.58f, 23.75f };
 
         pCameraController = initFpsCameraController(camPos, lookAt);
         pCameraController->setMotionParameters(camParameters);
 
-        InputSystemDesc inputDesc = {};
-        inputDesc.pRenderer = pRenderer;
-        inputDesc.pWindow = pWindow;
-        inputDesc.pJoystickTexture = "circlepad.tex";
-        if (!initInputSystem(&inputDesc))
-            return false;
-
-        // App Actions
-        InputActionDesc actionDesc = { DefaultInputActions::DUMP_PROFILE_DATA,
-                                       [](InputActionContext* ctx)
-                                       {
-                                           dumpProfileData(((Renderer*)ctx->pUserData)->pName);
-                                           return true;
-                                       },
-                                       pRenderer };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TOGGLE_FULLSCREEN,
-                       [](InputActionContext* ctx)
-                       {
-                           WindowDesc* winDesc = ((IApp*)ctx->pUserData)->pWindow;
-                           if (winDesc->fullScreen)
-                               winDesc->borderlessWindow
-                                   ? setBorderless(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect))
-                                   : setWindowed(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect));
-                           else
-                               setFullscreen(winDesc);
-                           return true;
-                       },
-                       this };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::EXIT, [](InputActionContext* ctx)
-                       {
-                           requestShutdown();
-                           return true;
-                       } };
-        addInputAction(&actionDesc);
-        InputActionCallback onUIInput = [](InputActionContext* ctx)
-        {
-            if (ctx->mActionId > UISystemInputActions::UI_ACTION_START_ID_)
-            {
-                uiOnInput(ctx->mActionId, ctx->mBool, ctx->pPosition, &ctx->mFloat2);
-            }
-            return true;
-        };
-
-        typedef bool (*CameraInputHandler)(InputActionContext * ctx, DefaultInputActions::DefaultInputAction action);
-        static CameraInputHandler onCameraInput = [](InputActionContext* ctx, DefaultInputActions::DefaultInputAction action)
-        {
-            if (*(ctx->pCaptured))
-            {
-                float2 delta = uiIsFocused() ? float2(0.f, 0.f) : ctx->mFloat2;
-                switch (action)
-                {
-                case DefaultInputActions::ROTATE_CAMERA:
-                    pCameraController->onRotate(delta);
-                    break;
-                case DefaultInputActions::TRANSLATE_CAMERA:
-                    pCameraController->onMove(delta);
-                    break;
-                case DefaultInputActions::TRANSLATE_CAMERA_VERTICAL:
-                    pCameraController->onMoveY(delta[0]);
-                    break;
-                default:
-                    break;
-                }
-            }
-            return true;
-        };
-        actionDesc = { DefaultInputActions::CAPTURE_INPUT,
-                       [](InputActionContext* ctx)
-                       {
-                           setEnableCaptureInput(!uiIsFocused() && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
-                           return true;
-                       },
-                       NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::ROTATE_CAMERA,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::ROTATE_CAMERA); }, NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA); }, NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA_VERTICAL,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA_VERTICAL); }, NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::RESET_CAMERA, [](InputActionContext* ctx)
-                       {
-                           if (!uiWantTextInput())
-                               pCameraController->resetView();
-                           return true;
-                       } };
-        addInputAction(&actionDesc);
-        GlobalInputActionDesc globalInputActionDesc = { GlobalInputActionDesc::ANY_BUTTON_ACTION, onUIInput, this };
-        setGlobalInputAction(&globalInputActionDesc);
+        AddCustomInputBindings();
 
         waitForToken(&token);
 
-        removeResource(pScene->geomData);
-        pScene->geomData = NULL;
-        unloadSanMiguel(pScene);
         tf_free(meshConstants);
-
+        initScreenshotInterface(pRenderer, pGraphicsQueue);
         return true;
     }
 
     void Exit()
     {
-        exitInputSystem();
+        exitScreenshotInterface();
         exitCameraController(pCameraController);
         tf_free(gInitializeVal);
         gInitializeVal = NULL;
@@ -1430,8 +1146,8 @@ public:
         gFrameIndex = 0;
         gFrameCount = 0;
 
-        removeGpuProfiler(gSSSRGpuProfileToken);
-        removeGpuProfiler(gPPRGpuProfileToken);
+        exitGpuProfiler(gSSSRGpuProfileToken);
+        exitGpuProfiler(gPPRGpuProfileToken);
 
         exitProfiler();
 
@@ -1445,6 +1161,9 @@ public:
         tf_free(gDiffuseMapsStorage);
         tf_free(gNormalMapsStorage);
         tf_free(gSpecularMapsStorage);
+        removeResource(pScene->geomData);
+        pScene->geomData = NULL;
+        exitSanMiguel(pScene);
 
         removeResource(pSpecularMap);
         removeResource(pIrradianceMap);
@@ -1482,9 +1201,6 @@ public:
 
         removeResource(pSanMiguelModel);
 
-        uiDestroyDynamicWidgets(&PPR_Widgets);
-        uiDestroyDynamicWidgets(&SSSR_Widgets);
-
         exitUserInterface();
 
         exitFontSystem();
@@ -1498,13 +1214,15 @@ public:
         exitVisibilityBuffer(pVisibilityBuffer);
 
         // Remove commands and command pool
-        removeSemaphore(pRenderer, pImageAcquiredSemaphore);
-        removeGpuCmdRing(pRenderer, &gGraphicsCmdRing);
-        removeQueue(pRenderer, pGraphicsQueue);
+        exitSemaphore(pRenderer, pImageAcquiredSemaphore);
+        exitGpuCmdRing(pRenderer, &gGraphicsCmdRing);
+        exitQueue(pRenderer, pGraphicsQueue);
 
         // Remove resource loader and renderer
         exitResourceLoaderInterface(pRenderer);
         exitRenderer(pRenderer);
+        exitGPUConfiguration();
+
         pRenderer = NULL;
     }
 
@@ -1536,7 +1254,7 @@ public:
         static const uint32_t gSpecularMips = (uint)log2(gSpecularSize) + 1;
 
         // Some texture format are not well covered on android devices (R32G32_SFLOAT, D32_SFLOAT, R32G32B32A32_SFLOAT)
-        bool supportLinearFiltering = pRenderer->pGpu->mCapBits.mFormatCaps[TinyImageFormat_R32G32B32A32_SFLOAT] & FORMAT_CAP_LINEAR_FILTER;
+        bool supportLinearFiltering = pRenderer->pGpu->mFormatCaps[TinyImageFormat_R32G32B32A32_SFLOAT] & FORMAT_CAP_LINEAR_FILTER;
 
         SamplerDesc samplerDesc = {};
         samplerDesc.mMinFilter = supportLinearFiltering ? FILTER_LINEAR : FILTER_NEAREST;
@@ -1610,7 +1328,7 @@ public:
         brdfIntegrationLoadDesc.ppTexture = &pBRDFIntegrationMap;
         addResource(&brdfIntegrationLoadDesc, NULL);
 
-        GPUPresetLevel presetLevel = pRenderer->pGpu->mSettings.mGpuVendorPreset.mPresetLevel;
+        GPUPresetLevel presetLevel = pRenderer->pGpu->mGpuVendorPreset.mPresetLevel;
 
         const char* brdfIntegrationShaders[GPUPresetLevel::GPU_PRESET_COUNT] = {
             "BRDFIntegration_SAMPLES_0.comp",   // GPU_PRESET_NONE
@@ -1643,13 +1361,13 @@ public:
         };
 
         ShaderLoadDesc brdfIntegrationShaderDesc = {};
-        brdfIntegrationShaderDesc.mStages[0].pFileName = brdfIntegrationShaders[presetLevel];
+        brdfIntegrationShaderDesc.mComp.pFileName = brdfIntegrationShaders[presetLevel];
 
         ShaderLoadDesc irradianceShaderDesc = {};
-        irradianceShaderDesc.mStages[0].pFileName = irradianceShaders[presetLevel];
+        irradianceShaderDesc.mComp.pFileName = irradianceShaders[presetLevel];
 
         ShaderLoadDesc specularShaderDesc = {};
-        specularShaderDesc.mStages[0].pFileName = specularShaders[presetLevel];
+        specularShaderDesc.mComp.pFileName = specularShaders[presetLevel];
 
         addShader(pRenderer, &irradianceShaderDesc, &pIrradianceShader);
         addShader(pRenderer, &specularShaderDesc, &pSpecularShader);
@@ -1709,7 +1427,7 @@ public:
         params[0].ppTextures = &pBRDFIntegrationMap;
         updateDescriptorSet(pRenderer, 0, pDescriptorSetBRDF, 1, params);
         cmdBindDescriptorSet(pCmd, 0, pDescriptorSetBRDF);
-        const uint32_t* pThreadGroupSize = pBRDFIntegrationShader->pReflection->mStageReflections[0].mNumThreadsPerGroup;
+        const uint32_t* pThreadGroupSize = pBRDFIntegrationShader->mNumThreadsPerGroup;
         cmdDispatch(pCmd, gBRDFIntegrationSize / pThreadGroupSize[0], gBRDFIntegrationSize / pThreadGroupSize[1], pThreadGroupSize[2]);
 
         TextureBarrier srvBarrier[1] = { { pBRDFIntegrationMap, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE } };
@@ -1728,7 +1446,7 @@ public:
         params[1].ppTextures = &pIrradianceMap;
         updateDescriptorSet(pRenderer, 0, pDescriptorSetIrradiance, 2, params);
         cmdBindDescriptorSet(pCmd, 0, pDescriptorSetIrradiance);
-        pThreadGroupSize = pIrradianceShader->pReflection->mStageReflections[0].mNumThreadsPerGroup;
+        pThreadGroupSize = pIrradianceShader->mNumThreadsPerGroup;
         cmdDispatch(pCmd, gIrradianceSize / pThreadGroupSize[0], gIrradianceSize / pThreadGroupSize[1], 6);
 
         /************************************************************************/
@@ -1754,10 +1472,10 @@ public:
             cmdBindPushConstants(pCmd, pSpecularRootSignature, getDescriptorIndexFromName(pSpecularRootSignature, "RootConstant"), &data);
             params[0].pName = "dstTexture";
             params[0].ppTextures = &pSpecularMap;
-            params[0].mUAVMipSlice = i;
+            params[0].mUAVMipSlice = (uint16_t)i;
             updateDescriptorSet(pRenderer, i, pDescriptorSetSpecular[1], 1, params);
             cmdBindDescriptorSet(pCmd, i, pDescriptorSetSpecular[1]);
-            pThreadGroupSize = pIrradianceShader->pReflection->mStageReflections[0].mNumThreadsPerGroup;
+            pThreadGroupSize = pIrradianceShader->mNumThreadsPerGroup;
             cmdDispatch(pCmd, max(1u, (gSpecularSize >> i) / pThreadGroupSize[0]), max(1u, (gSpecularSize >> i) / pThreadGroupSize[1]), 6);
         }
         /************************************************************************/
@@ -1809,6 +1527,185 @@ public:
 
         if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
         {
+            loadProfilerUI(mSettings.mWidth, mSettings.mHeight);
+
+            UIComponentDesc guiDesc = {};
+            guiDesc.mStartPosition = vec2(mSettings.mWidth * 0.01f, mSettings.mHeight * 0.2f);
+            uiAddComponent("Screen Space Reflections", &guiDesc, &pGui);
+
+            static const char* enumRenderModeNames[] = { "Render Scene Only", "Render Reflections Only", "Render Scene with Reflections",
+                                                         "Render Scene with exclusive Reflections" };
+
+            static const char* enumReflectionTypeNames[] = { "Pixel Projected Reflections", "Stochastic Screen Space Reflections" };
+
+            DropdownWidget ddRenderMode;
+            ddRenderMode.pData = &gRenderMode;
+            ddRenderMode.pNames = enumRenderModeNames;
+            ddRenderMode.mCount = sizeof(enumRenderModeNames) / sizeof(enumRenderModeNames[0]);
+            luaRegisterWidget(uiAddComponentWidget(pGui, "Render Mode", &ddRenderMode, WIDGET_TYPE_DROPDOWN));
+
+            DropdownWidget ddReflType;
+            ddReflType.pData = &gReflectionType;
+            ddReflType.pNames = enumReflectionTypeNames;
+            ddReflType.mCount = sizeof(enumReflectionTypeNames) / sizeof(enumReflectionTypeNames[0]);
+            luaRegisterWidget(uiAddComponentWidget(pGui, "Reflection Type", &ddReflType, WIDGET_TYPE_DROPDOWN));
+
+            SliderFloatWidget ground;
+            ground.pData = &gUniformDataExtenedCamera.mGroundRoughness;
+            ground.mMax = 1.0f;
+            ground.mMin = 0.0f;
+            luaRegisterWidget(uiAddComponentWidget(pGui, "Ground roughness", &ground, WIDGET_TYPE_SLIDER_FLOAT));
+            ground.pData = &gUniformDataExtenedCamera.mGroundMetallic;
+            luaRegisterWidget(uiAddComponentWidget(pGui, "Ground metallic", &ground, WIDGET_TYPE_SLIDER_FLOAT));
+
+            CheckboxWidget useEnvMap;
+            useEnvMap.pData = &gUseEnvMap;
+            luaRegisterWidget(uiAddComponentWidget(pGui, "Use Env map", &useEnvMap, WIDGET_TYPE_CHECKBOX));
+
+            Color3PickerWidget envColor;
+            envColor.pData = &gUniformDataExtenedCamera.mEnvColor;
+            luaRegisterWidget(uiAddComponentWidget(pGui, "Env color", &envColor, WIDGET_TYPE_COLOR3_PICKER));
+
+            CheckboxWidget holePatchCheck;
+            holePatchCheck.pData = &gUseHolePatching;
+            luaRegisterWidget(uiAddDynamicWidgets(&PPR_Widgets, "Use Holepatching", &holePatchCheck, WIDGET_TYPE_CHECKBOX));
+
+            CheckboxWidget holePatchExpCheck;
+            holePatchExpCheck.pData = &gUseExpensiveHolePatching;
+            luaRegisterWidget(uiAddDynamicWidgets(&PPR_Widgets, "Use Expensive Holepatching", &holePatchExpCheck, WIDGET_TYPE_CHECKBOX));
+
+            // pGui->AddWidget(CheckboxWidget("Use Normalmap", &gUseNormalMap));
+
+            CheckboxWidget fadeCheck;
+            fadeCheck.pData = &gUseFadeEffect;
+            luaRegisterWidget(uiAddDynamicWidgets(&PPR_Widgets, "Use Fade Effect", &fadeCheck, WIDGET_TYPE_CHECKBOX));
+
+            SliderFloatWidget pprIntensitySlider;
+            pprIntensitySlider.pData = &gRRP_Intensity;
+            pprIntensitySlider.mMin = 0.0f;
+            pprIntensitySlider.mMax = 1.0f;
+            luaRegisterWidget(uiAddDynamicWidgets(&PPR_Widgets, "Intensity of PPR", &pprIntensitySlider, WIDGET_TYPE_SLIDER_FLOAT));
+
+            SliderUintWidget numPlanesSlider;
+            numPlanesSlider.pData = &gPlaneNumber;
+            numPlanesSlider.mMin = 1;
+            numPlanesSlider.mMax = 4;
+            luaRegisterWidget(uiAddDynamicWidgets(&PPR_Widgets, "Number of Planes", &numPlanesSlider, WIDGET_TYPE_SLIDER_UINT));
+
+            SliderFloatWidget mainPlaneSizeSlider;
+            mainPlaneSizeSlider.pData = &gPlaneSize;
+            mainPlaneSizeSlider.mMin = 5.0f;
+            mainPlaneSizeSlider.mMax = 500.0;
+            luaRegisterWidget(uiAddDynamicWidgets(&PPR_Widgets, "Size of Main Plane", &mainPlaneSizeSlider, WIDGET_TYPE_SLIDER_FLOAT));
+
+            SliderFloatWidget nonMainPlaneRotSlider;
+            nonMainPlaneRotSlider.pData = &gPlaneRotationOffset;
+            nonMainPlaneRotSlider.mMin = -180.0f;
+            nonMainPlaneRotSlider.mMax = 180.0f;
+            luaRegisterWidget(
+                uiAddDynamicWidgets(&PPR_Widgets, "Rotation of Non-Main Planes", &nonMainPlaneRotSlider, WIDGET_TYPE_SLIDER_FLOAT));
+
+            CheckboxWidget debugNonProjected;
+            debugNonProjected.pData = &gDebugNonProjectedPixels;
+            luaRegisterWidget(uiAddDynamicWidgets(&PPR_Widgets, "Debug Non Projected Pixels", &debugNonProjected, WIDGET_TYPE_CHECKBOX));
+
+            if (gSSSRSupported)
+            {
+                OneLineCheckboxWidget olCheckbox;
+                olCheckbox.pData = &gUseSPD;
+                olCheckbox.mColor = float4(1.f);
+                luaRegisterWidget(
+                    uiAddDynamicWidgets(&SSSR_Widgets, "Use Singlepass Downsampler", &olCheckbox, WIDGET_TYPE_ONE_LINE_CHECKBOX));
+
+                olCheckbox.pData = &gSSSR_SkipDenoiser;
+                olCheckbox.mColor = float4(1.f);
+                luaRegisterWidget(
+                    uiAddDynamicWidgets(&SSSR_Widgets, "Show Intersection Results", &olCheckbox, WIDGET_TYPE_ONE_LINE_CHECKBOX));
+
+                SliderUintWidget uintSlider;
+                uintSlider.pData = &gSSSR_MaxTravelsalIntersections;
+                uintSlider.mMin = 0;
+                uintSlider.mMax = 256;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "Max Traversal Iterations", &uintSlider, WIDGET_TYPE_SLIDER_UINT));
+
+                uintSlider.pData = &gSSSR_MinTravelsalOccupancy;
+                uintSlider.mMin = 0;
+                uintSlider.mMax = 32;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "Min Traversal Occupancy", &uintSlider, WIDGET_TYPE_SLIDER_UINT));
+
+                uintSlider.pData = &gSSSR_MostDetailedMip;
+                uintSlider.mMin = 0;
+                uintSlider.mMax = 5;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "Most Detailed Level", &uintSlider, WIDGET_TYPE_SLIDER_UINT));
+
+                SliderFloatWidget floatSlider;
+                floatSlider.pData = &gSSSR_DepthThickness;
+                floatSlider.mMin = 0.0f;
+                floatSlider.mMax = 0.3f;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "Depth Buffer Thickness", &floatSlider, WIDGET_TYPE_SLIDER_FLOAT));
+
+                floatSlider.pData = &gSSSR_RougnessThreshold;
+                floatSlider.mMin = 0.0f;
+                floatSlider.mMax = 1.0f;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "Roughness Threshold", &floatSlider, WIDGET_TYPE_SLIDER_FLOAT));
+
+                floatSlider.pData = &pSSSR_TemporalStability;
+                floatSlider.mMin = 0.0f;
+                floatSlider.mMax = 1.0f;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "Temporal Stability", &floatSlider, WIDGET_TYPE_SLIDER_FLOAT));
+
+                olCheckbox.pData = &gSSSR_TemporalVarianceEnabled;
+                olCheckbox.mColor = float4(1.f);
+                luaRegisterWidget(
+                    uiAddDynamicWidgets(&SSSR_Widgets, "Enable Variance Guided Tracing", &olCheckbox, WIDGET_TYPE_ONE_LINE_CHECKBOX));
+
+                RadioButtonWidget radiobutton;
+                radiobutton.pData = &gSSSR_SamplesPerQuad;
+                radiobutton.mRadioId = 1;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "1 Sample Per Quad", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
+
+                radiobutton.pData = &gSSSR_SamplesPerQuad;
+                radiobutton.mRadioId = 2;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "2 Sample Per Quad", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
+
+                radiobutton.pData = &gSSSR_SamplesPerQuad;
+                radiobutton.mRadioId = 4;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "4 Sample Per Quad", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
+
+                radiobutton.pData = &gSSSR_EAWPassCount;
+                radiobutton.mRadioId = 1;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "1 EAW Pass", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
+
+                radiobutton.pData = &gSSSR_EAWPassCount;
+                radiobutton.mRadioId = 3;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "3 EAW Pass", &radiobutton, WIDGET_TYPE_RADIO_BUTTON));
+            }
+            else
+            {
+                LabelWidget notSupportedLabel;
+                luaRegisterWidget(uiAddDynamicWidgets(&SSSR_Widgets, "Not supported by your GPU", &notSupportedLabel, WIDGET_TYPE_LABEL));
+            }
+
+            DropdownWidget ddTestScripts;
+            ddTestScripts.pData = &gCurrentScriptIndex;
+            ddTestScripts.pNames = gTestScripts;
+            ddTestScripts.mCount = sizeof(gTestScripts) / sizeof(gTestScripts[0]);
+            luaRegisterWidget(uiAddComponentWidget(pGui, "Test Scripts", &ddTestScripts, WIDGET_TYPE_DROPDOWN));
+
+            ButtonWidget bRunScript;
+            UIWidget*    pRunScript = uiAddComponentWidget(pGui, "Run", &bRunScript, WIDGET_TYPE_BUTTON);
+            uiSetWidgetOnEditedCallback(pRunScript, nullptr, RunScript);
+            luaRegisterWidget(pRunScript);
+
+            if (gReflectionType == PP_REFLECTION)
+            {
+                uiShowDynamicWidgets(&PPR_Widgets, pGui);
+            }
+            else if (gReflectionType == SSS_REFLECTION)
+            {
+                uiShowDynamicWidgets(&SSSR_Widgets, pGui);
+            }
+
             if (!addSwapChain())
                 return false;
 
@@ -1842,8 +1739,6 @@ public:
         fontLoad.mLoadType = pReloadDesc->mType;
         loadFontSystem(&fontLoad);
 
-        initScreenshotInterface(pRenderer, pGraphicsQueue);
-
         gFrameIndex = 0;
         gFrameCount = 0;
 
@@ -1876,6 +1771,12 @@ public:
         {
             removeSwapChain(pRenderer, pSwapChain);
             removeRenderTargets();
+
+            uiRemoveComponent(pGui);
+            uiRemoveDynamicWidgets(&PPR_Widgets);
+            uiRemoveDynamicWidgets(&SSSR_Widgets);
+
+            unloadProfilerUI();
         }
 
         if (pReloadDesc->mType & RELOAD_TYPE_SHADER)
@@ -1883,31 +1784,54 @@ public:
             removeRootSignatures();
             removeShaders();
         }
-
-        exitScreenshotInterface();
     }
 
     void Update(float deltaTime)
     {
-        updateInputSystem(deltaTime, mSettings.mWidth, mSettings.mHeight);
+        if (!uiIsFocused())
+        {
+            pCameraController->onMove({ inputGetValue(0, CUSTOM_MOVE_X), inputGetValue(0, CUSTOM_MOVE_Y) });
+            pCameraController->onRotate({ inputGetValue(0, CUSTOM_LOOK_X), inputGetValue(0, CUSTOM_LOOK_Y) });
+            pCameraController->onMoveY(inputGetValue(0, CUSTOM_MOVE_UP));
+            if (inputGetValue(0, CUSTOM_RESET_VIEW))
+            {
+                pCameraController->resetView();
+            }
+            if (inputGetValue(0, CUSTOM_TOGGLE_FULLSCREEN))
+            {
+                toggleFullscreen(pWindow);
+            }
+            if (inputGetValue(0, CUSTOM_TOGGLE_UI))
+            {
+                uiToggleActive();
+            }
+            if (inputGetValue(0, CUSTOM_DUMP_PROFILE))
+            {
+                dumpProfileData(GetName());
+            }
+            if (inputGetValue(0, CUSTOM_EXIT))
+            {
+                requestShutdown();
+            }
+        }
 
         pCameraController->update(deltaTime);
 
         // Update camera
-        mat4        viewMat = pCameraController->getViewMatrix();
-        const float aspectInverse = (float)mSettings.mHeight / (float)mSettings.mWidth;
-        const float horizontalFov = PI / 2.0f;
-        const float nearPlane = 10.0f;
-        const float farPlane = 1000.f;
-        mat4        projMat = mat4::perspectiveLH_ReverseZ(horizontalFov, aspectInverse, nearPlane, farPlane);
-        mat4        ViewProjMat = projMat * viewMat;
-        mat4        mvp = ViewProjMat * gSanMiguelModelMat;
+        mat4         viewMat = pCameraController->getViewMatrix();
+        const float  aspectInverse = (float)mSettings.mHeight / (float)mSettings.mWidth;
+        const float  horizontalFov = PI / 2.0f;
+        const float  nearPlane = 0.1f;
+        const float  farPlane = 1000.f;
+        CameraMatrix projMat = CameraMatrix::perspectiveReverseZ(horizontalFov, aspectInverse, nearPlane, farPlane);
+        CameraMatrix ViewProjMat = projMat * viewMat;
+        CameraMatrix mvp = ViewProjMat * gSanMiguelModelMat;
 
         viewMat.setTranslation(vec3(0));
-        gUniformDataSky.mProjectView = projMat * viewMat;
+        gUniformDataSky.mProjectView = projMat.mCamera * viewMat;
 
         gMeshInfoUniformData[gFrameIndex].mPrevWorldViewProjMat = gMeshInfoUniformData[gFrameIndex].mWorldViewProjMat;
-        gMeshInfoUniformData[gFrameIndex].mWorldViewProjMat = mvp;
+        gMeshInfoUniformData[gFrameIndex].mWorldViewProjMat = mvp.mCamera;
 
         gVBConstants[gFrameIndex].transform[VIEW_CAMERA].mvp = mvp;
         gVBConstants[gFrameIndex].cullingViewports[VIEW_CAMERA].windowSize = { (float)mSettings.mWidth, (float)mSettings.mHeight };
@@ -1917,9 +1841,9 @@ public:
         gUniformDataExtenedCamera.mCameraWorldPos = vec4(pCameraController->getViewPosition(), 1.0);
         gUniformDataExtenedCamera.mViewMat = viewMat;
         gUniformDataExtenedCamera.mInvViewMat = inverse(gUniformDataExtenedCamera.mViewMat);
-        gUniformDataExtenedCamera.mProjMat = projMat;
-        gUniformDataExtenedCamera.mViewProjMat = ViewProjMat;
-        gUniformDataExtenedCamera.mInvViewProjMat = inverse(ViewProjMat);
+        gUniformDataExtenedCamera.mProjMat = projMat.mCamera;
+        gUniformDataExtenedCamera.mViewProjMat = ViewProjMat.mCamera;
+        gUniformDataExtenedCamera.mInvViewProjMat = inverse(ViewProjMat.mCamera);
         gUniformDataExtenedCamera.mViewPortSize = { (float)mSettings.mWidth, (float)mSettings.mHeight };
         gUniformDataExtenedCamera.mNear = nearPlane;
         gUniformDataExtenedCamera.mFar = farPlane;
@@ -1965,8 +1889,8 @@ public:
         gUniformSSSRConstantsData.g_prev_view_proj =
             transpose(transpose(gUniformSSSRConstantsData.g_proj) * transpose(gUniformSSSRConstantsData.g_view));
         gUniformSSSRConstantsData.g_inv_view_proj = transpose(gUniformDataExtenedCamera.mInvViewProjMat);
-        gUniformSSSRConstantsData.g_proj = transpose(projMat);
-        gUniformSSSRConstantsData.g_inv_proj = transpose(inverse(projMat));
+        gUniformSSSRConstantsData.g_proj = transpose(projMat.mCamera);
+        gUniformSSSRConstantsData.g_inv_proj = transpose(inverse(projMat.mCamera));
         gUniformSSSRConstantsData.g_view = transpose(gUniformDataExtenedCamera.mViewMat);
         gUniformSSSRConstantsData.g_inv_view = transpose(inverse(gUniformDataExtenedCamera.mViewMat));
 
@@ -2033,7 +1957,7 @@ public:
 
             uint64_t indirectBufferByteOffset = GET_INDIRECT_DRAW_ELEM_INDEX(VIEW_CAMERA, i, 0) * sizeof(uint32_t);
             Buffer*  pIndirectDrawBuffer = pVisibilityBuffer->ppIndirectDrawArgBuffer[0];
-            cmdExecuteIndirect(cmd, pCmdSignatureVBPass, 1, pIndirectDrawBuffer, indirectBufferByteOffset, NULL, 0);
+            cmdExecuteIndirect(cmd, INDIRECT_DRAW_INDEX, 1, pIndirectDrawBuffer, indirectBufferByteOffset, NULL, 0);
             cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
         }
 
@@ -2076,7 +2000,7 @@ public:
         {
             cmdBeginGpuTimestampQuery(cmd, gCurrentGpuProfileToken, "Draw Skybox");
 
-            BindRenderTargetsDesc bindRenderTargets = {};
+            bindRenderTargets = {};
             bindRenderTargets.mRenderTargetCount = 1;
             bindRenderTargets.mRenderTargets[0] = { pSceneBuffer, LOAD_ACTION_LOAD };
             bindRenderTargets.mDepthStencil = { pDepthBuffer, LOAD_ACTION_LOAD };
@@ -2100,7 +2024,7 @@ public:
 
     void Draw()
     {
-        if (pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
+        if ((bool)pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
         {
             waitQueueIdle(pGraphicsQueue);
             ::toggleVSync(pRenderer, &pSwapChain);
@@ -2137,7 +2061,7 @@ public:
 
         BufferUpdateDesc updateVisibilityBufferConstantDesc = { pBufferVBConstants[gFrameIndex] };
         beginUpdateResource(&updateVisibilityBufferConstantDesc);
-        memcpy(updateVisibilityBufferConstantDesc.pMappedData, &gVBConstants[gFrameIndex], sizeof(PerFrameVBConstants));
+        memcpy(updateVisibilityBufferConstantDesc.pMappedData, &gVBConstants[gFrameIndex], sizeof(PerFrameVBConstantsData));
         endUpdateResource(&updateVisibilityBufferConstantDesc);
 
         BufferUpdateDesc CbvExtendedCamera = { pBufferUniformExtendedCamera[gFrameIndex] };
@@ -2221,7 +2145,7 @@ public:
             cmdBindPipeline(cmd, pPPR_ProjectionPipeline);
             cmdBindDescriptorSet(cmd, 0, pDescriptorSetPPR_Projection[0]);
             cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetPPR_Projection[1]);
-            const uint32_t* pThreadGroupSize = pPPR_ProjectionShader->pReflection->mStageReflections[0].mNumThreadsPerGroup;
+            const uint32_t* pThreadGroupSize = pPPR_ProjectionShader->mNumThreadsPerGroup;
             cmdDispatch(cmd, (mSettings.mWidth * mSettings.mHeight / pThreadGroupSize[0]) + 1, 1, 1);
 
             cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
@@ -2361,7 +2285,7 @@ public:
 
             cmdBindPipeline(cmd, pSSSR_IntersectPipeline);
             cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetSSSR_Intersect);
-            cmdExecuteIndirect(cmd, pSSSR_IntersectCommandSignature, 1, pSSSR_IntersectArgsBuffer, 0, NULL, 0);
+            cmdExecuteIndirect(cmd, INDIRECT_DISPATCH, 1, pSSSR_IntersectArgsBuffer, 0, NULL, 0);
 
             cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
 
@@ -2379,7 +2303,7 @@ public:
 
                 cmdBindPipeline(cmd, pSSSR_ResolveSpatialPipeline);
                 cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetSSSR_ResolveSpatial);
-                cmdExecuteIndirect(cmd, pSSSR_ResolveSpatialCommandSignature, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
+                cmdExecuteIndirect(cmd, INDIRECT_DISPATCH, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
 
                 cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
 
@@ -2398,7 +2322,7 @@ public:
 
                     cmdBindPipeline(cmd, pSSSR_ResolveTemporalPipeline);
                     cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetSSSR_ResolveTemporal);
-                    cmdExecuteIndirect(cmd, pSSSR_ResolveTemporalCommandSignature, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
+                    cmdExecuteIndirect(cmd, INDIRECT_DISPATCH, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
 
                     cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
                 }
@@ -2412,7 +2336,7 @@ public:
 
                 cmdBindPipeline(cmd, pSSSR_ResolveEAWPipeline);
                 cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetSSSR_ResolveEAW);
-                cmdExecuteIndirect(cmd, pSSSR_ResolveEAWCommandSignature, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
+                cmdExecuteIndirect(cmd, INDIRECT_DISPATCH, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
 
                 cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
 
@@ -2427,7 +2351,7 @@ public:
 
                     cmdBindPipeline(cmd, pSSSR_ResolveEAWStride2Pipeline);
                     cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetSSSR_ResolveEAWStride2);
-                    cmdExecuteIndirect(cmd, pSSSR_ResolveEAWStride2CommandSignature, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
+                    cmdExecuteIndirect(cmd, INDIRECT_DISPATCH, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
 
                     cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
 
@@ -2440,7 +2364,7 @@ public:
 
                     cmdBindPipeline(cmd, pSSSR_ResolveEAWStride4Pipeline);
                     cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetSSSR_ResolveEAWStride4);
-                    cmdExecuteIndirect(cmd, pSSSR_ResolveEAWStride4CommandSignature, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
+                    cmdExecuteIndirect(cmd, INDIRECT_DISPATCH, 1, pSSSR_DenoiserArgsBuffer, 0, NULL, 0);
 
                     cmdEndGpuTimestampQuery(cmd, gCurrentGpuProfileToken);
                 }
@@ -2527,7 +2451,7 @@ public:
         submitDesc.pSignalFence = elem.pFence;
         queueSubmit(pGraphicsQueue, &submitDesc);
         QueuePresentDesc presentDesc = {};
-        presentDesc.mIndex = swapchainImageIndex;
+        presentDesc.mIndex = (uint8_t)swapchainImageIndex;
         presentDesc.mWaitSemaphoreCount = 1;
         presentDesc.ppWaitSemaphores = &elem.pSemaphore;
         presentDesc.pSwapChain = pSwapChain;
@@ -2578,19 +2502,19 @@ public:
             updateDescriptorSet(pRenderer, 0, pDescriptorSetTriangleFiltering[0], 4, filterParams);
             for (uint32_t i = 0; i < gDataBufferCount; ++i)
             {
-                DescriptorData filterParams[5] = {};
-                filterParams[0].pName = "filteredIndicesBuffer";
-                filterParams[0].mCount = NUM_CULLING_VIEWPORTS;
-                filterParams[0].ppBuffers = &pVisibilityBuffer->ppFilteredIndexBuffer[0];
-                filterParams[1].pName = "indirectDataBuffer";
-                filterParams[1].ppBuffers = &pVisibilityBuffer->ppIndirectDataBuffer[i];
-                filterParams[2].pName = "PerFrameVBConstants";
-                filterParams[2].ppBuffers = &pBufferVBConstants[i];
-                filterParams[3].pName = "filterDispatchGroupDataBuffer";
-                filterParams[3].ppBuffers = &pVisibilityBuffer->ppFilterDispatchGroupDataBuffer[i];
-                filterParams[4].pName = "indirectDrawArgs";
-                filterParams[4].ppBuffers = &pVisibilityBuffer->ppIndirectDrawArgBuffer[0];
-                updateDescriptorSet(pRenderer, i, pDescriptorSetTriangleFiltering[1], 5, filterParams);
+                DescriptorData filterParamsIdx[5] = {};
+                filterParamsIdx[0].pName = "filteredIndicesBuffer";
+                filterParamsIdx[0].mCount = NUM_CULLING_VIEWPORTS;
+                filterParamsIdx[0].ppBuffers = &pVisibilityBuffer->ppFilteredIndexBuffer[0];
+                filterParamsIdx[1].pName = "indirectDataBuffer";
+                filterParamsIdx[1].ppBuffers = &pVisibilityBuffer->ppIndirectDataBuffer[i];
+                filterParamsIdx[2].pName = "PerFrameVBConstants";
+                filterParamsIdx[2].ppBuffers = &pBufferVBConstants[i];
+                filterParamsIdx[3].pName = "filterDispatchGroupDataBuffer";
+                filterParamsIdx[3].ppBuffers = &pVisibilityBuffer->ppFilterDispatchGroupDataBuffer[i];
+                filterParamsIdx[4].pName = "indirectDrawArgs";
+                filterParamsIdx[4].ppBuffers = &pVisibilityBuffer->ppIndirectDrawArgBuffer[0];
+                updateDescriptorSet(pRenderer, i, pDescriptorSetTriangleFiltering[1], 5, filterParamsIdx);
             }
         }
         // VB Pass
@@ -2608,12 +2532,12 @@ public:
 
             for (uint32_t i = 0; i < gDataBufferCount; ++i)
             {
-                DescriptorData objectParams[2] = {};
-                objectParams[0].pName = "objectUniformBlock";
-                objectParams[0].ppBuffers = &pBufferMeshTransforms[i];
-                objectParams[1].pName = "indirectDataBuffer";
-                objectParams[1].ppBuffers = &pVisibilityBuffer->ppIndirectDataBuffer[i];
-                updateDescriptorSet(pRenderer, i, pDescriptorSetVBPass[1], 2, objectParams);
+                DescriptorData objectParamsUniform[2] = {};
+                objectParamsUniform[0].pName = "objectUniformBlock";
+                objectParamsUniform[0].ppBuffers = &pBufferMeshTransforms[i];
+                objectParamsUniform[1].pName = "indirectDataBuffer";
+                objectParamsUniform[1].ppBuffers = &pVisibilityBuffer->ppIndirectDataBuffer[i];
+                updateDescriptorSet(pRenderer, i, pDescriptorSetVBPass[1], 2, objectParamsUniform);
             }
         }
 
@@ -2655,16 +2579,16 @@ public:
 
             for (uint32_t i = 0; i < gDataBufferCount; ++i)
             {
-                DescriptorData vbShadeParams[4] = {};
-                vbShadeParams[0].pName = "objectUniformBlock";
-                vbShadeParams[0].ppBuffers = &pBufferMeshTransforms[i];
-                vbShadeParams[1].pName = "indirectDataBuffer";
-                vbShadeParams[1].ppBuffers = &pVisibilityBuffer->ppIndirectDataBuffer[i];
-                vbShadeParams[2].pName = "filteredIndexBuffer";
-                vbShadeParams[2].ppBuffers = &pVisibilityBuffer->ppFilteredIndexBuffer[VIEW_CAMERA];
-                vbShadeParams[3].pName = "cbExtendCamera";
-                vbShadeParams[3].ppBuffers = &pBufferUniformExtendedCamera[i];
-                updateDescriptorSet(pRenderer, i, pDescriptorSetVBShade[1], TF_ARRAY_COUNT(vbShadeParams), vbShadeParams);
+                DescriptorData vbShadeParamsObj[4] = {};
+                vbShadeParamsObj[0].pName = "objectUniformBlock";
+                vbShadeParamsObj[0].ppBuffers = &pBufferMeshTransforms[i];
+                vbShadeParamsObj[1].pName = "indirectDataBuffer";
+                vbShadeParamsObj[1].ppBuffers = &pVisibilityBuffer->ppIndirectDataBuffer[i];
+                vbShadeParamsObj[2].pName = "filteredIndexBuffer";
+                vbShadeParamsObj[2].ppBuffers = &pVisibilityBuffer->ppFilteredIndexBuffer[VIEW_CAMERA];
+                vbShadeParamsObj[3].pName = "cbExtendCamera";
+                vbShadeParamsObj[3].ppBuffers = &pBufferUniformExtendedCamera[i];
+                updateDescriptorSet(pRenderer, i, pDescriptorSetVBShade[1], TF_ARRAY_COUNT(vbShadeParamsObj), vbShadeParamsObj);
             }
         }
 
@@ -2753,10 +2677,10 @@ public:
                     DescriptorData params[2] = {};
                     params[0].pName = "Source";
                     params[0].ppTextures = &pSSSR_DepthHierarchy;
-                    params[0].mUAVMipSlice = i - 1;
+                    params[0].mUAVMipSlice = (uint16_t)(i - 1);
                     params[1].pName = "Destination";
                     params[1].ppTextures = &pSSSR_DepthHierarchy;
-                    params[1].mUAVMipSlice = i;
+                    params[1].mUAVMipSlice = (uint16_t)i;
                     updateDescriptorSet(pRenderer, i - 1, pDescriptorGenerateMip, 2, params);
                 }
             }
@@ -3096,11 +3020,6 @@ public:
         vbPassRootDesc.ppStaticSamplers = vbPassSamplers;
         addRootSignature(pRenderer, &vbPassRootDesc, &pRootSignatureVBPass);
 
-        IndirectArgumentDescriptor indirectArg = {};
-        indirectArg.mType = INDIRECT_DRAW_INDEX;
-        CommandSignatureDesc vbPassDesc = { pRootSignatureVBPass, &indirectArg, 1 };
-        addIndirectCommandSignature(pRenderer, &vbPassDesc, &pCmdSignatureVBPass);
-
         Sampler* vbShadeSceneSamplers[] = { pDefaultSampler, pSamplerBilinear, pSamplerLinearClampToEdge };
 
         const char* vbShadeSceneSamplersNames[] = { "defaultSampler", "envSampler", "clampMiplessLinearSampler" };
@@ -3159,7 +3078,7 @@ public:
 
             RootSignatureDesc GenerateMipShaderDescRootDesc = { &pGenerateMipShader, 1 };
             addRootSignature(pRenderer, &GenerateMipShaderDescRootDesc, &pGenerateMipRootSignature);
-            gMipSizeRootConstantIndex = getDescriptorIndexFromName(pGenerateMipRootSignature, "RootConstant");
+            gMipSizeRootConstantIndex = getDescriptorIndexFromName(pGenerateMipRootSignature, "uRootConstant");
 
             // SSSR
             RootSignatureDesc SSSR_ClassifyTilesRootDesc = { &pSSSR_ClassifyTilesShader, 1 };
@@ -3171,47 +3090,20 @@ public:
             RootSignatureDesc SSSR_IntersectRootDesc = { &pSSSR_IntersectShader, 1 };
             addRootSignature(pRenderer, &SSSR_IntersectRootDesc, &pSSSR_IntersectRootSignature);
 
-            IndirectArgumentDescriptor indirectArgDescs[1] = {};
-            indirectArgDescs[0].mType = INDIRECT_DISPATCH;
-
-            CommandSignatureDesc cmdSignatureDesc = { pSSSR_IntersectRootSignature, indirectArgDescs,
-                                                      sizeof(indirectArgDescs) / sizeof(indirectArgDescs[0]), true };
-            addIndirectCommandSignature(pRenderer, &cmdSignatureDesc, &pSSSR_IntersectCommandSignature);
-
             RootSignatureDesc SSSR_ResolveSpatialRootDesc = { &pSSSR_ResolveSpatialShader, 1 };
             addRootSignature(pRenderer, &SSSR_ResolveSpatialRootDesc, &pSSSR_ResolveSpatialRootSignature);
-
-            CommandSignatureDesc cmdResolveSpatialSignatureDesc = { pSSSR_ResolveSpatialRootSignature, indirectArgDescs,
-                                                                    sizeof(indirectArgDescs) / sizeof(indirectArgDescs[0]), true };
-            addIndirectCommandSignature(pRenderer, &cmdResolveSpatialSignatureDesc, &pSSSR_ResolveSpatialCommandSignature);
 
             RootSignatureDesc SSSR_ResolveTemporalRootDesc = { &pSSSR_ResolveTemporalShader, 1 };
             addRootSignature(pRenderer, &SSSR_ResolveTemporalRootDesc, &pSSSR_ResolveTemporalRootSignature);
 
-            CommandSignatureDesc cmdResolveTemporalSignatureDesc = { pSSSR_ResolveTemporalRootSignature, indirectArgDescs,
-                                                                     sizeof(indirectArgDescs) / sizeof(indirectArgDescs[0]), true };
-            addIndirectCommandSignature(pRenderer, &cmdResolveTemporalSignatureDesc, &pSSSR_ResolveTemporalCommandSignature);
-
             RootSignatureDesc SSSR_ResolveEAWRootDesc = { &pSSSR_ResolveEAWShader, 1 };
             addRootSignature(pRenderer, &SSSR_ResolveEAWRootDesc, &pSSSR_ResolveEAWRootSignature);
-
-            CommandSignatureDesc cmdResolveEAWSignatureDesc = { pSSSR_ResolveEAWRootSignature, indirectArgDescs,
-                                                                sizeof(indirectArgDescs) / sizeof(indirectArgDescs[0]), true };
-            addIndirectCommandSignature(pRenderer, &cmdResolveEAWSignatureDesc, &pSSSR_ResolveEAWCommandSignature);
 
             RootSignatureDesc SSSR_ResolveEAWStride2RootDesc = { &pSSSR_ResolveEAWStride2Shader, 1 };
             addRootSignature(pRenderer, &SSSR_ResolveEAWStride2RootDesc, &pSSSR_ResolveEAWStride2RootSignature);
 
-            CommandSignatureDesc cmdResolveEAWStride2SignatureDesc = { pSSSR_ResolveEAWStride2RootSignature, indirectArgDescs,
-                                                                       sizeof(indirectArgDescs) / sizeof(indirectArgDescs[0]), true };
-            addIndirectCommandSignature(pRenderer, &cmdResolveEAWStride2SignatureDesc, &pSSSR_ResolveEAWStride2CommandSignature);
-
             RootSignatureDesc SSSR_ResolveEAWStride4RootDesc = { &pSSSR_ResolveEAWStride4Shader, 1 };
             addRootSignature(pRenderer, &SSSR_ResolveEAWStride4RootDesc, &pSSSR_ResolveEAWStride4RootSignature);
-
-            CommandSignatureDesc cmdResolveEAWStride4SignatureDesc = { pSSSR_ResolveEAWStride4RootSignature, indirectArgDescs,
-                                                                       sizeof(indirectArgDescs) / sizeof(indirectArgDescs[0]), true };
-            addIndirectCommandSignature(pRenderer, &cmdResolveEAWStride4SignatureDesc, &pSSSR_ResolveEAWStride4CommandSignature);
         }
     }
 
@@ -3221,21 +3113,14 @@ public:
         removeRootSignature(pRenderer, pRootSignatureVBShade);
         removeRootSignature(pRenderer, pRootSignatureClearBuffers);
         removeRootSignature(pRenderer, pRootSignatureTriangleFiltering);
-        removeIndirectCommandSignature(pRenderer, pCmdSignatureVBPass);
 
         if (gSSSRSupported)
         {
-            removeIndirectCommandSignature(pRenderer, pSSSR_ResolveEAWStride4CommandSignature);
             removeRootSignature(pRenderer, pSSSR_ResolveEAWStride4RootSignature);
-            removeIndirectCommandSignature(pRenderer, pSSSR_ResolveEAWStride2CommandSignature);
             removeRootSignature(pRenderer, pSSSR_ResolveEAWStride2RootSignature);
-            removeIndirectCommandSignature(pRenderer, pSSSR_ResolveEAWCommandSignature);
             removeRootSignature(pRenderer, pSSSR_ResolveEAWRootSignature);
-            removeIndirectCommandSignature(pRenderer, pSSSR_ResolveTemporalCommandSignature);
             removeRootSignature(pRenderer, pSSSR_ResolveTemporalRootSignature);
-            removeIndirectCommandSignature(pRenderer, pSSSR_ResolveSpatialCommandSignature);
             removeRootSignature(pRenderer, pSSSR_ResolveSpatialRootSignature);
-            removeIndirectCommandSignature(pRenderer, pSSSR_IntersectCommandSignature);
             removeRootSignature(pRenderer, pSSSR_IntersectRootSignature);
             removeRootSignature(pRenderer, pSSSR_PrepareIndirectArgsRootSignature);
             removeRootSignature(pRenderer, pSSSR_ClassifyTilesRootSignature);
@@ -3254,116 +3139,111 @@ public:
     {
         // Load shaders for Vis Buffer
         ShaderLoadDesc clearBuffersShaderDesc = {};
-        clearBuffersShaderDesc.mStages[0].pFileName = "clearVisibilityBuffers.comp";
+        clearBuffersShaderDesc.mComp.pFileName = "clearVisibilityBuffers.comp";
         addShader(pRenderer, &clearBuffersShaderDesc, &pShaderClearBuffers);
 
         ShaderLoadDesc triangleFilteringShaderDesc = {};
-        triangleFilteringShaderDesc.mStages[0].pFileName = "triangleFiltering.comp";
+        triangleFilteringShaderDesc.mComp.pFileName = "triangleFiltering.comp";
         addShader(pRenderer, &triangleFilteringShaderDesc, &pShaderTriangleFiltering);
 
-#if defined(VULKAN)
-        // Some vulkan driver doesn't generate glPrimitiveID without a geometry pass (steam deck as 03/30/2023)
-        bool addGeometryPassThrough = gSettings.mAddGeometryPassThrough && pRenderer->mRendererApi == RENDERER_API_VULKAN;
-#else
-        bool addGeometryPassThrough = false;
-#endif
-        // No SV_PrimitiveID in pixel shader on ORBIS. Only available in gs stage so we need
-#if defined(ORBIS) || defined(PROSPERO)
-        addGeometryPassThrough = true;
-#endif
-
         ShaderLoadDesc shaderVBrepass = {};
-        shaderVBrepass.mStages[0].pFileName = "visibilityBufferPass.vert";
-        shaderVBrepass.mStages[1].pFileName = "visibilityBufferPass.frag";
+        shaderVBrepass.mVert.pFileName = "visibilityBufferPass.vert";
+        shaderVBrepass.mFrag.pFileName = "visibilityBufferPass.frag";
+
+        // Some vulkan driver doesn't generate glPrimitiveID without a geometry pass (steam deck as 03/30/2023)
+        bool addGeometryPassThrough = gSettings.mAddGeometryPassThrough;
         if (addGeometryPassThrough)
         {
             // a passthrough gs
-            shaderVBrepass.mStages[2].pFileName = "visibilityBufferPass.geom";
+            shaderVBrepass.mGeom.pFileName = "visibilityBufferPass.geom";
         }
+
         addShader(pRenderer, &shaderVBrepass, &pShaderVBBufferPass[GEOMSET_OPAQUE]);
 
         ShaderLoadDesc visibilityBufferPassAlphaShaderDesc = {};
-        visibilityBufferPassAlphaShaderDesc.mStages[0].pFileName = "visibilityBufferPassAlpha.vert";
-        visibilityBufferPassAlphaShaderDesc.mStages[1].pFileName = "visibilityBufferPassAlpha.frag";
+        visibilityBufferPassAlphaShaderDesc.mVert.pFileName = "visibilityBufferPassAlpha.vert";
+        visibilityBufferPassAlphaShaderDesc.mFrag.pFileName = "visibilityBufferPassAlpha.frag";
+
         if (addGeometryPassThrough)
         {
             // a passthrough gs
-            visibilityBufferPassAlphaShaderDesc.mStages[2].pFileName = "visibilityBufferPassAlpha.geom";
+            visibilityBufferPassAlphaShaderDesc.mGeom.pFileName = "visibilityBufferPassAlpha.geom";
         }
+
         addShader(pRenderer, &visibilityBufferPassAlphaShaderDesc, &pShaderVBBufferPass[GEOMSET_ALPHA_CUTOUT]);
 
         ShaderLoadDesc visibilityBufferShadeShaderDesc = {};
-        visibilityBufferShadeShaderDesc.mStages[0].pFileName = "visibilityBufferShade.vert";
-        visibilityBufferShadeShaderDesc.mStages[1].pFileName = "visibilityBufferShade.frag";
+        visibilityBufferShadeShaderDesc.mVert.pFileName = "visibilityBufferShade.vert";
+        visibilityBufferShadeShaderDesc.mFrag.pFileName = "visibilityBufferShade.frag";
         addShader(pRenderer, &visibilityBufferShadeShaderDesc, &pShaderVBShade);
 
         ShaderLoadDesc skyboxShaderDesc = {};
-        skyboxShaderDesc.mStages[0].pFileName = "skybox.vert";
-        skyboxShaderDesc.mStages[1].pFileName = "skybox.frag";
+        skyboxShaderDesc.mVert.pFileName = "skybox.vert";
+        skyboxShaderDesc.mFrag.pFileName = "skybox.frag";
         addShader(pRenderer, &skyboxShaderDesc, &pSkyboxShader);
 
         // PPR_Projection
         ShaderLoadDesc PPR_ProjectionShaderDesc = {};
-        PPR_ProjectionShaderDesc.mStages[0].pFileName = "PPR_Projection.comp";
+        PPR_ProjectionShaderDesc.mComp.pFileName = "PPR_Projection.comp";
         addShader(pRenderer, &PPR_ProjectionShaderDesc, &pPPR_ProjectionShader);
 
         // PPR_Reflection
         ShaderLoadDesc PPR_ReflectionShaderDesc = {};
-        PPR_ReflectionShaderDesc.mStages[0].pFileName = "PPR_Reflection.vert";
-        PPR_ReflectionShaderDesc.mStages[1].pFileName = "PPR_Reflection.frag";
+        PPR_ReflectionShaderDesc.mVert.pFileName = "PPR_Reflection.vert";
+        PPR_ReflectionShaderDesc.mFrag.pFileName = "PPR_Reflection.frag";
         addShader(pRenderer, &PPR_ReflectionShaderDesc, &pPPR_ReflectionShader);
 
         // PPR_HolePatching
         ShaderLoadDesc PPR_HolePatchingShaderDesc = {};
-        PPR_HolePatchingShaderDesc.mStages[0].pFileName = "PPR_Holepatching.vert";
-        PPR_HolePatchingShaderDesc.mStages[1].pFileName = "PPR_Holepatching.frag";
+        PPR_HolePatchingShaderDesc.mVert.pFileName = "PPR_Holepatching.vert";
+        PPR_HolePatchingShaderDesc.mFrag.pFileName = "PPR_Holepatching.frag";
         addShader(pRenderer, &PPR_HolePatchingShaderDesc, &pPPR_HolePatchingShader);
 
         if (gSSSRSupported)
         {
             ShaderLoadDesc SPDDesc = {};
-            SPDDesc.mStages[0].pFileName = "DepthDownsample.comp";
+            SPDDesc.mComp.pFileName = "DepthDownsample.comp";
             addShader(pRenderer, &SPDDesc, &pSPDShader);
 
             ShaderLoadDesc CopyDepthShaderDesc = {};
-            CopyDepthShaderDesc.mStages[0].pFileName = "copyDepth.comp";
+            CopyDepthShaderDesc.mComp.pFileName = "copyDepth.comp";
             addShader(pRenderer, &CopyDepthShaderDesc, &pCopyDepthShader);
 
             ShaderLoadDesc GenerateMipShaderDesc = {};
-            GenerateMipShaderDesc.mStages[0].pFileName = "generateMips.comp";
+            GenerateMipShaderDesc.mComp.pFileName = "generateMips.comp";
             addShader(pRenderer, &GenerateMipShaderDesc, &pGenerateMipShader);
 
             // SSSR
             ShaderLoadDesc SSSR_ClassifyTilesShaderDesc = {};
-            SSSR_ClassifyTilesShaderDesc.mStages[0].pFileName = "SSSR_ClassifyTiles.comp";
+            SSSR_ClassifyTilesShaderDesc.mComp.pFileName = "SSSR_ClassifyTiles.comp";
             addShader(pRenderer, &SSSR_ClassifyTilesShaderDesc, &pSSSR_ClassifyTilesShader);
 
             ShaderLoadDesc SSSR_PrepareIndirectArgsShaderDesc = {};
-            SSSR_PrepareIndirectArgsShaderDesc.mStages[0].pFileName = "SSSR_PrepareIndirectArgs.comp";
+            SSSR_PrepareIndirectArgsShaderDesc.mComp.pFileName = "SSSR_PrepareIndirectArgs.comp";
             addShader(pRenderer, &SSSR_PrepareIndirectArgsShaderDesc, &pSSSR_PrepareIndirectArgsShader);
 
             ShaderLoadDesc SSSR_IntersectShaderDesc = {};
-            SSSR_IntersectShaderDesc.mStages[0].pFileName = "SSSR_Intersect.comp";
+            SSSR_IntersectShaderDesc.mComp.pFileName = "SSSR_Intersect.comp";
             addShader(pRenderer, &SSSR_IntersectShaderDesc, &pSSSR_IntersectShader);
 
             ShaderLoadDesc SSSR_ResolveSpatialShaderDesc = {};
-            SSSR_ResolveSpatialShaderDesc.mStages[0].pFileName = "SSSR_ResolveSpatial.comp";
+            SSSR_ResolveSpatialShaderDesc.mComp.pFileName = "SSSR_ResolveSpatial.comp";
             addShader(pRenderer, &SSSR_ResolveSpatialShaderDesc, &pSSSR_ResolveSpatialShader);
 
             ShaderLoadDesc SSSR_ResolveTemporalShaderDesc = {};
-            SSSR_ResolveTemporalShaderDesc.mStages[0].pFileName = "SSSR_ResolveTemporal.comp";
+            SSSR_ResolveTemporalShaderDesc.mComp.pFileName = "SSSR_ResolveTemporal.comp";
             addShader(pRenderer, &SSSR_ResolveTemporalShaderDesc, &pSSSR_ResolveTemporalShader);
 
             ShaderLoadDesc SSSR_ResolveEAWShaderDesc = {};
-            SSSR_ResolveEAWShaderDesc.mStages[0].pFileName = "SSSR_ResolveEaw.comp";
+            SSSR_ResolveEAWShaderDesc.mComp.pFileName = "SSSR_ResolveEaw.comp";
             addShader(pRenderer, &SSSR_ResolveEAWShaderDesc, &pSSSR_ResolveEAWShader);
 
             ShaderLoadDesc SSSR_ResolveEAWStride2ShaderDesc = {};
-            SSSR_ResolveEAWStride2ShaderDesc.mStages[0].pFileName = "SSSR_ResolveEawStride_2.comp";
+            SSSR_ResolveEAWStride2ShaderDesc.mComp.pFileName = "SSSR_ResolveEawStride_2.comp";
             addShader(pRenderer, &SSSR_ResolveEAWStride2ShaderDesc, &pSSSR_ResolveEAWStride2Shader);
 
             ShaderLoadDesc SSSR_ResolveEAWStride4ShaderDesc = {};
-            SSSR_ResolveEAWStride4ShaderDesc.mStages[0].pFileName = "SSSR_ResolveEawStride_4.comp";
+            SSSR_ResolveEAWStride4ShaderDesc.mComp.pFileName = "SSSR_ResolveEawStride_4.comp";
             addShader(pRenderer, &SSSR_ResolveEAWStride4ShaderDesc, &pSSSR_ResolveEAWStride4Shader);
         }
     }
@@ -3927,7 +3807,7 @@ public:
         }
 
         const uint32_t capMask = FORMAT_CAP_READ | FORMAT_CAP_WRITE;
-        const bool     isR16SFSupported = (pRenderer->pGpu->mCapBits.mFormatCaps[TinyImageFormat_R16_SFLOAT] & capMask) == capMask;
+        const bool     isR16SFSupported = (pRenderer->pGpu->mFormatCaps[TinyImageFormat_R16_SFLOAT] & capMask) == capMask;
 
         TextureDesc temporalVarianceDesc = {};
         temporalVarianceDesc.mArraySize = 1;

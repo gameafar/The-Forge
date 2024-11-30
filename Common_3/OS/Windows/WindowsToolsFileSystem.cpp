@@ -101,7 +101,6 @@ void fswThreadFunc(void* data)
 
         GetOverlappedResult(hDir, &ovl, &dwBytesReturned, FALSE);
 
-        DWORD offset = 0;
         BYTE* p = notifyBuffer;
         for (;;)
         {
@@ -396,6 +395,17 @@ bool fsCheckPath(ResourceDirectory rd, const char* path, bool* exist, bool* isDi
     return true;
 }
 
+time_t fsGetLastModifiedTime(ResourceDirectory rd, const char* fileName)
+{
+    char filePath[FS_MAX_PATH] = { 0 };
+    if (!fsMergeDirAndFileName(fsGetResourceDirectory(rd), fileName, '\\', sizeof filePath, filePath))
+        return 0;
+
+    struct stat fileInfo = { 0 };
+    stat(filePath, &fileInfo);
+    return fileInfo.st_mtime;
+}
+
 struct WindowsFsDirectoryIterator
 {
     bool             finished;
@@ -496,7 +506,6 @@ bool fsDirectoryIteratorNext(FsDirectoryIterator data, struct FsDirectoryIterato
         // if (iterator->fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
 
         bool isDir = iterator->fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-        bool isFile = !isDir;
 
         if (!WideCharToMultiByte(CP_UTF8, 0, iterator->fd.cFileName, -1, iterator->buffer, sizeof iterator->buffer, NULL, NULL))
             continue;

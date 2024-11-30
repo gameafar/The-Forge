@@ -101,6 +101,8 @@ static void DispatchPreSkinVertexes(Cmd* pCmd, PreSkinBatchChunk* pBatchChunk, D
 
 PreSkinVertexesStats cmdVisibilityBufferPreSkinVertexesPass(VisibilityBuffer* pVisibilityBuffer, Cmd* pCmd, PreSkinVertexesPassDesc* pDesc)
 {
+    UNREF_PARAM(pVisibilityBuffer);
+
     ASSERT(gVBSettings.mEnablePreSkinPass);
     ASSERT(gVBSettings.mPreSkinBatchSize > 0);
     ASSERT(gVBSettings.mPreSkinBatchCount > 0);
@@ -442,6 +444,8 @@ static BufferLoadDesc MainVertexBufferLoadDesc(PreSkinACVertexBuffersDesc* pDesc
 static void addPreSkinACAliasedBuffer(Renderer* pRenderer, PreSkinACVertexBuffersDesc* pDesc, ResourceHeap* pHeap, uint64_t heapOffset,
                                       uint64_t vbSize, PreSkinACAliasedBuffer* pOut, uint32_t attrStride, const char* pPreSkinBufferName)
 {
+    UNREF_PARAM(pRenderer);
+
     // Placement for the VertexBuffers
     pOut->mVBSize = vbSize;
     pOut->mVBPlacement.pHeap = pHeap;
@@ -483,6 +487,8 @@ static void addPreSkinACAliasedBuffer(Renderer* pRenderer, PreSkinACVertexBuffer
 
 static void removePreSkinACAliasedBuffer(Renderer* pRenderer, PreSkinACAliasedBuffer* pBuffers)
 {
+    UNREF_PARAM(pRenderer);
+
     for (uint32_t i = 0; i < gVBSettings.mNumBuffers; ++i)
         removeResource(pBuffers->pPreSkinBuffers[i]);
 }
@@ -597,7 +603,7 @@ bool initVisibilityBuffer(Renderer* pRenderer, const VisibilityBufferDesc* pDesc
     ASSERT(pDesc->mFilterBatchCount > 0);
 
     VisibilityBuffer* pVisibilityBuffer = (VisibilityBuffer*)tf_malloc(sizeof(VisibilityBuffer));
-    gVBSettings.mUniformBufferAlignment = pRenderer->pGpu->mSettings.mUniformBufferAlignment;
+    gVBSettings.mUniformBufferAlignment = pRenderer->pGpu->mUniformBufferAlignment;
     gVBSettings.mNumGeomSets = pDesc->mNumGeometrySets;
     gVBSettings.mNumViews = pDesc->mNumViews;
     gVBSettings.mFilterBatchCount = pDesc->mFilterBatchCount;

@@ -44,8 +44,6 @@ if not 'FSL_COMPILER_DXC' in os.environ:
 if not 'FSL_COMPILER_VK' in os.environ:
     os.environ['FSL_COMPILER_VK'] = os.path.normpath(forge_root+'/Common_3/Graphics/ThirdParty/OpenSource/VulkanSDK/bin/Win32/')
     os.environ['FSL_COMPILER_LINUX_VK'] = os.path.normpath(forge_root+'/Common_3/Graphics/ThirdParty/OpenSource/VulkanSDK/bin/Linux/')
-if not 'FSL_COMPILER_GLES' in os.environ:
-    os.environ['FSL_COMPILER_GLES'] = os.path.normpath(forge_root+'/Common_3/Graphics/ThirdParty/OpenSource/VulkanSDK/bin/Win32/')
 if not 'FSL_COMPILER_MACOS' in os.environ:
     os.environ['FSL_COMPILER_MACOS'] = os.path.normpath('C:/Program Files/Metal Developer Tools/macos/bin')
 if not 'FSL_COMPILER_IOS' in os.environ:

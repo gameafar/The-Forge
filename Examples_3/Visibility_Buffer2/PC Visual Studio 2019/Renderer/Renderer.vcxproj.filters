@@ -2,67 +2,67 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Graphics">
-      <UniqueIdentifier>{bbe65c2b-4c19-4b25-a6b2-44dd24a64803}</UniqueIdentifier>
+      <UniqueIdentifier>{fc56eadb-2a20-4948-8ec1-dc88594dfaaf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\Direct3D11">
-      <UniqueIdentifier>{54a318b5-440b-466a-9492-c0a205ad581f}</UniqueIdentifier>
+      <UniqueIdentifier>{15be9985-e515-427a-85c4-abbca7af245d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\Direct3D12">
-      <UniqueIdentifier>{1a5f6b1c-c780-4453-91c3-090d41f6819a}</UniqueIdentifier>
+      <UniqueIdentifier>{09e37600-551e-41fa-a542-1e41a2f78e70}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\Vulkan">
-      <UniqueIdentifier>{812cc3a5-aab2-42f6-b1d8-82ab4c16cef7}</UniqueIdentifier>
+      <UniqueIdentifier>{210a5534-b24d-4747-a591-19091eaa01d7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\VisibilityBuffer">
-      <UniqueIdentifier>{a7b826e6-b691-446a-beb8-602d92d3416e}</UniqueIdentifier>
+      <UniqueIdentifier>{316961fa-4ba9-4440-85d8-12d721dbe44f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer">
-      <UniqueIdentifier>{e54f1672-a52f-4a40-b679-41bb637dbd4e}</UniqueIdentifier>
+      <UniqueIdentifier>{5ec81477-ab3a-4e02-97c4-bc818b1596d1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources\ResourceLoader">
-      <UniqueIdentifier>{288ebe25-9d17-4b7d-9e68-404d7cc31e34}</UniqueIdentifier>
+      <UniqueIdentifier>{c2ae9460-2cff-48bd-b2e9-002283c7e708}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources">
-      <UniqueIdentifier>{fada182c-3c20-4d5c-aed2-d56d0ce4180e}</UniqueIdentifier>
+      <UniqueIdentifier>{d2d54b99-2a47-4f75-81fe-8a422f716fad}</UniqueIdentifier>
     </Filter>
     <Filter Include="Tools\Network">
-      <UniqueIdentifier>{0448af72-9b85-4820-bdc4-adc964493500}</UniqueIdentifier>
+      <UniqueIdentifier>{2943acb0-e723-418c-bde5-51a8302d180f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Tools">
-      <UniqueIdentifier>{fbbf2d57-4819-4eab-8ba1-a58587347d26}</UniqueIdentifier>
+      <UniqueIdentifier>{e5443b83-dcf9-4dd2-8057-3cb42bb3a4a3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Tools\ReloadServer">
-      <UniqueIdentifier>{29d1ed1f-3cdb-4ee9-b899-0e84f432f2a2}</UniqueIdentifier>
+      <UniqueIdentifier>{acabadca-b24c-46dd-bf99-b20be2a478a1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\Interfaces">
-      <UniqueIdentifier>{c08fa652-f38b-4a8c-bd8e-7576a76c3e0a}</UniqueIdentifier>
+      <UniqueIdentifier>{7b6f9dbd-b807-4c57-a5c4-343d7aa5d0ad}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\ThirdParty\OpenSource\ags">
-      <UniqueIdentifier>{b241af9e-ec7d-496b-ab06-7c4445e3dbc8}</UniqueIdentifier>
+      <UniqueIdentifier>{8b5fa07e-7498-48d6-85c6-8e5b23c546e3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\ThirdParty\OpenSource">
-      <UniqueIdentifier>{1a1cc752-fe07-4fca-8412-35d43b5b42c4}</UniqueIdentifier>
+      <UniqueIdentifier>{037087ce-e989-4a68-b727-84b7e5b7fc21}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\ThirdParty">
-      <UniqueIdentifier>{a852b892-a3ff-4ecb-9bd3-4b55eb40e325}</UniqueIdentifier>
+      <UniqueIdentifier>{33402b44-410f-40c5-85a3-bf60457940b6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\ThirdParty\OpenSource\nvapi">
-      <UniqueIdentifier>{d26c0849-07bc-48ea-b50b-bea33c39f517}</UniqueIdentifier>
+      <UniqueIdentifier>{c88a9172-305d-42e3-b58c-db24a84a528e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Graphics\ThirdParty\OpenSource\VulkanMemoryAllocator">
-      <UniqueIdentifier>{12e98207-ce6f-4bbe-95fd-3d239b7e9823}</UniqueIdentifier>
+      <UniqueIdentifier>{50b49c85-5890-4295-8307-f8fdc2e60812}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\Interfaces">
-      <UniqueIdentifier>{94b199be-874f-414b-9b70-5cef0189e77b}</UniqueIdentifier>
+      <UniqueIdentifier>{f03efdb1-7361-4f92-9f20-b255ffe473b2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources\ResourceLoader\Interfaces">
-      <UniqueIdentifier>{2fd4b129-04a4-4534-9966-963860472629}</UniqueIdentifier>
+      <UniqueIdentifier>{29229cbc-8f8b-436a-9e58-6c6f944b62ea}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\VisibilityBuffer\Shaders\FSL">
-      <UniqueIdentifier>{f9ad42d5-e7e8-4143-ad50-7145457ad95d}</UniqueIdentifier>
+      <UniqueIdentifier>{9fc20802-f98d-498f-895e-3a76cbc039b9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\VisibilityBuffer\Shaders">
-      <UniqueIdentifier>{62a80876-43e4-41c7-901a-3ac000a7ee2f}</UniqueIdentifier>
+      <UniqueIdentifier>{a59691ed-ec84-469d-a58b-8a32e5dcca40}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -88,9 +88,6 @@
       <Filter>Graphics\Direct3D12</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\Common_3\Graphics\GraphicsConfig.cpp">
-      <Filter>Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Common_3\Graphics\PickRenderingApi.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\Common_3\Graphics\Vulkan\Vulkan.cpp">

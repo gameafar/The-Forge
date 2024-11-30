@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Middleware_3\PaniniProjection">
-      <UniqueIdentifier>{2f77d522-61c7-4f13-b05f-536fcd4d58a5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Middleware_3">
-      <UniqueIdentifier>{9bc16903-bf17-4cac-8563-76a4487de67b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Examples_3\Unit_Tests\src\11_LinkedMultiGPU">
       <UniqueIdentifier>{d64dd2e3-b0e1-40d9-a095-18f071a2cdf1}</UniqueIdentifier>
     </Filter>
@@ -25,24 +19,30 @@
     <Filter Include="Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Shaders">
       <UniqueIdentifier>{7bc9d08c-00a7-4187-a878-75b583a21f8a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Scripts">
-      <UniqueIdentifier>{423f31b1-871b-4a46-be71-56c31e89d92a}</UniqueIdentifier>
+    <Filter Include="Art\Scripts\11_LinkedMultiGPU">
+      <UniqueIdentifier>{e5350dfb-0aa3-4daa-bbb0-1f4ae2273788}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Art\Scripts">
+      <UniqueIdentifier>{a4bd9b75-7921-4ad4-84dc-97d2b7eee0ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Art">
+      <UniqueIdentifier>{ec5de140-f8e6-43dc-8422-ca5a8dcc9b69}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Middleware_3\PaniniProjection\Panini.cpp">
-      <Filter>Middleware_3\PaniniProjection</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\11_LinkedMultiGPU\11_MultiGPU.cpp">
       <Filter>Examples_3\Unit_Tests\src\11_LinkedMultiGPU</Filter>
     </ClCompile>
-    <ClInclude Include="..\..\..\Middleware_3\PaniniProjection\Panini.h">
-      <Filter>Middleware_3\PaniniProjection</Filter>
-    </ClInclude>
     <FSLShader Include="..\src\11_LinkedMultiGPU\Shaders\FSL\basic.frag.fsl">
       <Filter>Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Shaders\FSL</Filter>
     </FSLShader>
     <FSLShader Include="..\src\11_LinkedMultiGPU\Shaders\FSL\basic.vert.fsl">
+      <Filter>Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Shaders\FSL</Filter>
+    </FSLShader>
+    <FSLShader Include="..\src\11_LinkedMultiGPU\Shaders\FSL\copyQuad.frag.fsl">
+      <Filter>Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Shaders\FSL</Filter>
+    </FSLShader>
+    <FSLShader Include="..\src\11_LinkedMultiGPU\Shaders\FSL\copyQuad.vert.fsl">
       <Filter>Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Shaders\FSL</Filter>
     </FSLShader>
     <FSLShader Include="..\src\11_LinkedMultiGPU\Shaders\FSL\ShaderList.fsl">
@@ -54,8 +54,8 @@
     <FSLShader Include="..\src\11_LinkedMultiGPU\Shaders\FSL\skybox.vert.fsl">
       <Filter>Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Shaders\FSL</Filter>
     </FSLShader>
-    <None Include="..\src\11_LinkedMultiGPU\Scripts\Test0.lua">
-      <Filter>Examples_3\Unit_Tests\src\11_LinkedMultiGPU\Scripts</Filter>
+    <None Include="..\..\..\Art\Scripts\11_LinkedMultiGPU\Test0.lua">
+      <Filter>Art\Scripts\11_LinkedMultiGPU</Filter>
     </None>
   </ItemGroup>
 </Project>

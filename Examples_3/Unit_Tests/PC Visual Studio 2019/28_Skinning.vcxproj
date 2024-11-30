@@ -30,7 +30,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
-    <Import Project="..\..\..\Common_3\IDE\Visual Studio\TF_Shared.props" />
+    <Import Project="..\..\..\Examples_3\Build_Props\VS\TF_Shared.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -41,6 +41,7 @@
     <LinkIncremental>true</LinkIncremental>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
@@ -48,6 +49,7 @@
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -58,12 +60,19 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Common_3\Resources\AnimationSystem\ThirdParty\OpenSource\ozz-animation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>Xinput9_1_0.lib;ws2_32.lib;gainputstatic.lib;ozz_base.lib;ozz_animation.lib;Renderer.lib;OS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>
+        Xinput9_1_0.lib;
+        ws2_32.lib;
+        ozz_base.lib;
+        ozz_animation.lib;
+        Renderer.lib;
+        OS.lib;
+        %(AdditionalDependencies);
+      </AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
@@ -75,25 +84,13 @@
       <ResourceOutputFileName>$(IntDir)$(TargetName)$(TargetExt).embed.manifest.res</ResourceOutputFileName>
     </ManifestResourceCompile>
     <PostBuildEvent>
-      <Command>%(Command) set ART=$(ProjectDir)..\..\..\Art\
-xcopy /Y /S /D "%ART%\UnitTestResources\Animation\*.ozz" "$(OutDir)Animation\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Animation\*.bin" "$(OutDir)Meshes\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Textures\dds\Stormtrooper_D.tex" "$(OutDir)Textures\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
-
-xcopy /Y /S /D /E "$(OutDir)..\OS\Shaders" "$(OutDir)Shaders"
-xcopy /Y /S /D /E "$(OutDir)..\OS\CompiledShaders" "$(OutDir)CompiledShaders"
-
-xcopy /Y /S /D "%ART%\UnitTestResources\Scripts\*.lua" "$(OutDir)Scripts\"
-
-xcopy "$(TheForgeRoot)Common_3\OS\Windows\pc_gpu.data" "$(OutDir)GPUCfg\gpu.data*" /Y /D
-xcopy "$(TheForgeRoot)Examples_3\Unit_Tests\src\$(ProjectName)\GPUCfg\gpu.cfg" "$(OutDir)GPUCfg\gpu.cfg*" /Y /D
-</Command>
+      <Command>
+        %(Command)
+      </Command>
     </PostBuildEvent>
     <FSLShader>
-      <OutDir>$(OutDir)/Shaders</OutDir>
-      <BinaryOutDir>$(OutDir)/CompiledShaders</BinaryOutDir>
+      <OutDir>$(OutDir)Shaders</OutDir>
+      <BinaryOutDir>$(OutDir)CompiledShaders</BinaryOutDir>
       <Compile>true</Compile>
       <Language>VULKAN DIRECT3D12 DIRECT3D11</Language>
     </FSLShader>
@@ -108,12 +105,19 @@ xcopy "$(TheForgeRoot)Examples_3\Unit_Tests\src\$(ProjectName)\GPUCfg\gpu.cfg" "
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <DiagnosticsFormat>Classic</DiagnosticsFormat>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Common_3\Resources\AnimationSystem\ThirdParty\OpenSource\ozz-animation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Xinput9_1_0.lib;ws2_32.lib;gainputstatic.lib;ozz_base.lib;ozz_animation.lib;Renderer.lib;OS.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalDependencies>
+        Xinput9_1_0.lib;
+        ws2_32.lib;
+        ozz_base.lib;
+        ozz_animation.lib;
+        Renderer.lib;
+        OS.lib;
+        %(AdditionalDependencies);
+      </AdditionalDependencies>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalOptions>/ignore:4099</AdditionalOptions>
@@ -122,25 +126,13 @@ xcopy "$(TheForgeRoot)Examples_3\Unit_Tests\src\$(ProjectName)\GPUCfg\gpu.cfg" "
       <AdditionalManifestFiles>$(SolutionDir)dpi-aware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>%(Command) set ART=$(ProjectDir)..\..\..\Art\
-xcopy /Y /S /D "%ART%\UnitTestResources\Animation\*.ozz" "$(OutDir)Animation\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Animation\*.bin" "$(OutDir)Meshes\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Textures\dds\Stormtrooper_D.tex" "$(OutDir)Textures\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
-
-xcopy /Y /S /D /E "$(OutDir)..\OS\Shaders" "$(OutDir)Shaders"
-xcopy /Y /S /D /E "$(OutDir)..\OS\CompiledShaders" "$(OutDir)CompiledShaders"
-
-xcopy /Y /S /D "%ART%\UnitTestResources\Scripts\*.lua" "$(OutDir)Scripts\"
-
-xcopy "$(TheForgeRoot)Common_3\OS\Windows\pc_gpu.data" "$(OutDir)GPUCfg\gpu.data*" /Y /D
-xcopy "$(TheForgeRoot)Examples_3\Unit_Tests\src\$(ProjectName)\GPUCfg\gpu.cfg" "$(OutDir)GPUCfg\gpu.cfg*" /Y /D
-</Command>
+      <Command>
+        %(Command)
+      </Command>
     </PostBuildEvent>
     <FSLShader>
-      <OutDir>$(OutDir)/Shaders</OutDir>
-      <BinaryOutDir>$(OutDir)/CompiledShaders</BinaryOutDir>
+      <OutDir>$(OutDir)Shaders</OutDir>
+      <BinaryOutDir>$(OutDir)CompiledShaders</BinaryOutDir>
       <Compile>true</Compile>
       <Language>VULKAN DIRECT3D12 DIRECT3D11</Language>
     </FSLShader>

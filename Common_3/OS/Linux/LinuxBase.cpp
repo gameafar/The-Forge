@@ -33,8 +33,7 @@
 #include <ctime>
 #include <gtk/gtk.h>
 #include <sys/utsname.h>
-
-#include "../../Utilities/ThirdParty/OpenSource/rmem/inc/rmem.h"
+#include <libgen.h>
 
 #include "../../Application/Interfaces/IApp.h"
 #include "../../Application/Interfaces/IFont.h"
@@ -47,8 +46,11 @@
 #include "../../Utilities/Interfaces/IThread.h"
 #include "../../Utilities/Interfaces/ITime.h"
 #include "../Interfaces/IOperatingSystem.h"
+#include "../Interfaces/IInput.h"
 
-#include "../../Tools/Network/Network.h"
+#if defined(ENABLE_FORGE_RELOAD_SHADER)
+#include "../../Tools/ReloadServer/ReloadClient.h"
+#endif
 #include "../../Utilities/Math/MathTypes.h"
 #include "../CPUConfig.h"
 
@@ -84,7 +86,11 @@ static OSInfo  gOsInfo = {};
 
 /// VSync Toggle
 static UIComponent* pToggleVSyncWindow = NULL;
+#if defined(ENABLE_FORGE_RELOAD_SHADER)
 static UIComponent* pReloadShaderComponent = NULL;
+#endif
+
+bool gCaptureCursorOnMouseDown = true;
 
 //------------------------------------------------------------------------
 // OPERATING SYSTEM INTERFACE FUNCTIONS
@@ -133,9 +139,12 @@ bool initBaseSubsystems()
     extern bool platformInitUserInterface();
     extern void platformInitLuaScriptingSystem();
     extern void platformInitWindowSystem(WindowDesc*);
+    extern void platformInitInput(WindowDesc*);
 
     platformInitWindowSystem(gWindowDesc);
     pApp->pWindow = gWindowDesc;
+
+    platformInitInput(gWindowDesc);
 
 #ifdef ENABLE_FORGE_FONTS
     if (!platformInitFontSystem())
@@ -163,10 +172,6 @@ bool initBaseSubsystems()
 #endif
 #endif
 
-#if defined(ENABLE_FORGE_REMOTE_UI)
-    initNetwork();
-#endif
-
     return true;
 }
 
@@ -176,8 +181,11 @@ void updateBaseSubsystems(float deltaTime, bool appDrawn)
     extern void platformUpdateLuaScriptingSystem(bool appDrawn);
     extern void platformUpdateUserInterface(float deltaTime);
     extern void platformUpdateWindowSystem();
+    extern void platformUpdateInput(float deltaTime);
 
     platformUpdateWindowSystem();
+
+    platformUpdateInput(deltaTime);
 
 #ifdef ENABLE_FORGE_SCRIPTING
     platformUpdateLuaScriptingSystem(appDrawn);
@@ -195,6 +203,9 @@ void exitBaseSubsystems()
     extern void platformExitUserInterface();
     extern void platformExitLuaScriptingSystem();
     extern void platformExitWindowSystem();
+    extern void platformExitInput();
+
+    platformExitInput();
 
     platformExitWindowSystem();
 
@@ -208,10 +219,6 @@ void exitBaseSubsystems()
 
 #ifdef ENABLE_FORGE_SCRIPTING
     platformExitLuaScriptingSystem();
-#endif
-
-#if defined(ENABLE_FORGE_REMOTE_UI)
-    exitNetwork();
 #endif
 }
 
@@ -231,23 +238,24 @@ void setupPlatformUI(int32_t width, int32_t height)
     // VSYNC CONTROL
     UIComponentDesc UIComponentDesc = {};
     UIComponentDesc.mStartPosition = vec2(width * 0.4f, height * 0.90f);
-    uiCreateComponent("VSync Control", &UIComponentDesc, &pToggleVSyncWindow);
+    uiAddComponent("VSync Control", &UIComponentDesc, &pToggleVSyncWindow);
 
     CheckboxWidget checkbox;
     checkbox.pData = &pApp->mSettings.mVSyncEnabled;
-    UIWidget* pCheckbox = uiCreateComponentWidget(pToggleVSyncWindow, "Toggle VSync\t\t\t\t\t", &checkbox, WIDGET_TYPE_CHECKBOX);
+    UIWidget* pCheckbox = uiAddComponentWidget(pToggleVSyncWindow, "Toggle VSync\t\t\t\t\t", &checkbox, WIDGET_TYPE_CHECKBOX);
     REGISTER_LUA_WIDGET(pCheckbox);
 
+#if defined(ENABLE_FORGE_RELOAD_SHADER)
     // RELOAD CONTROL
     UIComponentDesc = {};
     UIComponentDesc.mStartPosition = vec2(width * 0.6f, height * 0.90f);
-    uiCreateComponent("Reload Control", &UIComponentDesc, &pReloadShaderComponent);
+    uiAddComponent("Reload Control", &UIComponentDesc, &pReloadShaderComponent);
+    platformReloadClientAddReloadShadersWidgets(pReloadShaderComponent);
+#endif
 
     // MICROPROFILER UI
     toggleProfilerMenuUI(true);
 
-    extern void platformReloadClientAddReloadShadersButton(UIComponent * pReloadShaderComponent);
-    platformReloadClientAddReloadShadersButton(pReloadShaderComponent);
 #endif
 
 #if defined(ENABLE_FORGE_SCRIPTING) && defined(AUTOMATED_TESTING)
@@ -274,7 +282,9 @@ void togglePlatformUI()
     platformToggleWindowSystemUI(gShowPlatformUI);
 
     uiSetComponentActive(pToggleVSyncWindow, gShowPlatformUI);
+#if defined(ENABLE_FORGE_RELOAD_SHADER)
     uiSetComponentActive(pReloadShaderComponent, gShowPlatformUI);
+#endif
 #endif
 }
 
@@ -282,7 +292,7 @@ void togglePlatformUI()
 // APP ENTRY POINT
 //------------------------------------------------------------------------
 
-#if defined(ENABLE_GRAPHICS_DEBUG) && defined(VULKAN) && VK_OVERRIDE_LAYER_PATH
+#if defined(ENABLE_GRAPHICS_VALIDATION) && defined(VULKAN) && VK_OVERRIDE_LAYER_PATH
 static bool strreplace(char* s, const char* s1, const char* s2)
 {
     char* p = strstr(s, s1);
@@ -313,12 +323,12 @@ int LinuxMain(int argc, char** argv, IApp* app)
     if (!initFileSystem(&fsDesc))
         return EXIT_FAILURE;
 
-    fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_LOG, "");
-
-#if defined(ENABLE_GRAPHICS_DEBUG) && defined(VULKAN) && VK_OVERRIDE_LAYER_PATH
+#if defined(ENABLE_GRAPHICS_VALIDATION) && defined(VULKAN) && VK_OVERRIDE_LAYER_PATH
     // We are now shipping validation layer in the repo itself to remove dependency on Vulkan SDK to be installed
     // Set VK_LAYER_PATH to executable location so it can find the layer files that our application wants to use
-    const char* debugPath = pSystemFileIO->GetResourceMount(RM_DEBUG);
+    char tmpPath[FS_MAX_PATH] = { 0 };
+    readlink("/proc/self/exe", tmpPath, FS_MAX_PATH);
+    const char* debugPath = dirname(tmpPath);
     VERIFY(!setenv("VK_LAYER_PATH", debugPath, true));
     // HACK: we can't simply specify LD_LIBRARY_PATH at runtime,
     // so we have to patch the .json file to use the full path for the shared library.
@@ -345,10 +355,6 @@ int LinuxMain(int argc, char** argv, IApp* app)
 
     fclose(file);
     tf_free(buffer);
-#endif
-
-#if TF_USE_MTUNER
-    rmemInit(0);
 #endif
 
     initLog(app->GetName(), DEFAULT_LOG_LEVEL);
@@ -407,8 +413,8 @@ int LinuxMain(int argc, char** argv, IApp* app)
         pSettings->mHeight = getRectHeight(&rect);
     }
 
-    gWindow.windowedRect = { 0, 0, (int)pSettings->mWidth, (int)pSettings->mHeight };
-    gWindow.clientRect = rect;
+    gWindow.windowedRect = {};
+    gWindow.clientRect = { 0, 0, (int)pSettings->mWidth, (int)pSettings->mHeight };
     gWindow.fullScreen = pSettings->mFullScreen;
     gWindow.cursorCaptured = false;
     openWindow(pApp->GetName(), &gWindow);
@@ -455,12 +461,6 @@ int LinuxMain(int argc, char** argv, IApp* app)
 
     if (!pApp->Init())
     {
-        const char* pRendererReason;
-        if (hasRendererInitializationError(&pRendererReason))
-        {
-            pApp->ShowUnsupportedMessage(pRendererReason);
-        }
-
         if (pApp->mUnsupported)
         {
             errorMessagePopup("Application unsupported", pApp->pUnsupportedReason ? pApp->pUnsupportedReason : "", &pApp->pWindow->handle,
@@ -503,6 +503,9 @@ int LinuxMain(int argc, char** argv, IApp* app)
 #endif
 
         bool lastMinimized = gWindow.minimized;
+
+        extern void platformUpdateLastInputState();
+        platformUpdateLastInputState();
 
         gQuit = handleMessages(gWindowDesc);
 
@@ -547,9 +550,10 @@ int LinuxMain(int argc, char** argv, IApp* app)
             togglePlatformUI();
         }
 
-        extern bool platformReloadClientShouldQuit(void);
+#if defined(ENABLE_FORGE_RELOAD_SHADER)
         if (platformReloadClientShouldQuit())
             gQuit = true;
+#endif
 
 #ifdef AUTOMATED_TESTING
         extern bool gAutomatedTestingScriptsFinished;
@@ -581,14 +585,9 @@ int LinuxMain(int argc, char** argv, IApp* app)
 
     pApp->Exit();
 
-    exitLog();
-
     exitBaseSubsystems();
 
-#if TF_USE_MTUNER
-    rmemUnload();
-    rmemShutDown();
-#endif
+    exitLog();
 
     exitMemAlloc();
 

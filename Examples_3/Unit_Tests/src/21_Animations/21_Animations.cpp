@@ -35,7 +35,7 @@
 #include "../../../../Common_3/Application/Interfaces/IApp.h"
 #include "../../../../Common_3/Application/Interfaces/ICameraController.h"
 #include "../../../../Common_3/Application/Interfaces/IFont.h"
-#include "../../../../Common_3/Application/Interfaces/IInput.h"
+#include "../../../../Common_3/OS/Interfaces/IInput.h"
 #include "../../../../Common_3/Application/Interfaces/IProfiler.h"
 #include "../../../../Common_3/Application/Interfaces/IScreenshot.h"
 #include "../../../../Common_3/Application/Interfaces/IUI.h"
@@ -138,12 +138,13 @@ ICameraController*   pCameraController = NULL;
 FontDrawDesc gFrameTimeDraw;
 uint32_t     gFontID = 0;
 
-const char* gTestScripts[] = { "Test0.lua" };
+const char* gTestScripts[] = { "21_Animations/Test0.lua" };
 uint32_t    gScriptIndexes[] = { 0 };
 uint32_t    gCurrentScriptIndex = 0;
 
 void RunScript(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     LuaScriptDesc runDesc = {};
     runDesc.pScriptFileName = gTestScripts[gCurrentScriptIndex];
     luaQueueScriptToRun(&runDesc);
@@ -307,8 +308,8 @@ struct UIData
     {
         bool  mAutoSetBlendParams = true;
         float mThreshold = 0.1f;
-        float mStandClipWeight = 0.2f;
-        float mWalkClipWeight = 0.2f;
+        float mStandClipWeight = 0.5f;
+        float mWalkClipWeight = 0.5f;
         float mUpperBodyWeight = kDefaultUpperBodyWeight;
         float mStandJointsWeight = kDefaultStandJointsWeight;
         float mWalkJointsWeight = kDefaultWalkJointsWeight;
@@ -324,9 +325,7 @@ struct UIData
     struct AttachedObjectData
     {
         unsigned int mJointIndex = kLeftHandMiddleJointIndex;
-        float        mXOffset = -0.001f; // Values that will place it naturally in the hand
-        float        mYOffset = 0.041f;
-        float        mZOffset = -0.141f;
+        float3       mOffset = { -0.001f, 0.041f, -0.141f }; // Values that will place it naturally in the hand
     } mAttachedObject;
 
     struct IKParamsData
@@ -368,14 +367,22 @@ struct UIData
     unsigned int mUpperBodyJointIndex = kSpineJointIndex;
 } gUIData = {};
 
+enum AnimationIndices
+{
+    ANIMATION_INDEX_PLAYBACK,
+    ANIMATION_INDEX_BLEND,
+    ANIMATION_INDEX_PARTIALBLEND,
+    ANIMATION_INDEX_ADDITIVEBLEND
+};
+
 const char* gAnimationNames[] = { "PlayBack", "Blending", "PartialBlending", "AdditiveBlending" };
 
-uint32_t gAnimationIndexes[] = { 0, 1, 2, 3 };
-uint32_t gCurrentAnimationIndex = 0;
+uint32_t gCurrentAnimationIndex = ANIMATION_INDEX_PLAYBACK;
 
 // Hard set the controller's time ratio via callback when it is set in the UI
 void ShatterClipTimeChangeCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     if (gUIData.mGeneralSettings.mDrawBakedPhysics)
     {
         gShatterClipContoller.SetTimeRatioHard(0.0f);
@@ -390,6 +397,7 @@ void ShatterClipTimeChangeCallback(void* pUserData)
 
 void AnimatedCameraChangeCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     if (!gUIData.mGeneralSettings.mDrawBakedPhysics)
     {
         gUIData.mGeneralSettings.mAnimatedCamera = false;
@@ -399,9 +407,10 @@ void AnimatedCameraChangeCallback(void* pUserData)
 // StandClip Callbacks
 void StandClipPlayCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -415,9 +424,10 @@ void StandClipPlayCallback(void* pUserData)
 }
 void StandClipLoopCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -431,9 +441,10 @@ void StandClipLoopCallback(void* pUserData)
 }
 void StandClipTimeChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         gUIData.mStandClip.mPlay = false;
         for (size_t i = 0; i < gNumRigs; i++)
@@ -444,9 +455,10 @@ void StandClipTimeChangeCallback(void* pUserData)
 }
 void StandClipPlaybackSpeedChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -460,14 +472,15 @@ void StandClipPlaybackSpeedChangeCallback(void* pUserData)
 }
 void SetStandClipJointsWeightWithUIValues(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     gStandClipMask.DisableAllJoints();
     gStandClipMask.SetAllChildrenOf(gUIData.mUpperBodyJointIndex, gUIData.mPartialBlendingParams.mStandJointsWeight);
 }
 void StandClipJointsWeightCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         SetStandClipJointsWeightWithUIValues(pUserData);
     }
@@ -478,10 +491,11 @@ void StandClipJointsWeightCallback(void* pUserData)
 }
 void StandClipWeightCallback(void* pUserData)
 {
-    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
-        if (gCurrentAnimationIndex == 2)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND)
         {
             for (size_t i = 0; i < gNumRigs; i++)
             {
@@ -498,9 +512,10 @@ void StandClipWeightCallback(void* pUserData)
 // WalkClip Callbacks
 void WalkClipPlayCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -514,9 +529,10 @@ void WalkClipPlayCallback(void* pUserData)
 }
 void WalkClipLoopCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -530,9 +546,10 @@ void WalkClipLoopCallback(void* pUserData)
 }
 void WalkClipTimeChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         gUIData.mWalkClip.mPlay = false;
         for (size_t i = 0; i < gNumRigs; i++)
@@ -543,9 +560,10 @@ void WalkClipTimeChangeCallback(void* pUserData)
 }
 void WalkClipPlaybackSpeedChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -564,9 +582,10 @@ void SetWalkClipJointsWeightWithUIValues()
 }
 void WalkClipJointsWeightCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         SetWalkClipJointsWeightWithUIValues();
     }
@@ -575,12 +594,15 @@ void WalkClipJointsWeightCallback(void* pUserData)
         gUIData.mPartialBlendingParams.mWalkJointsWeight = 1.0f - gUIData.mPartialBlendingParams.mUpperBodyWeight;
     }
 }
+
 void WalkClipWeightCallback(void* pUserData)
 {
-    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND) ||
+        gCurrentAnimationIndex == ANIMATION_INDEX_ADDITIVEBLEND)
     {
-        if (gCurrentAnimationIndex == 1)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_BLEND)
         {
             for (size_t i = 0; i < gNumRigs; i++)
             {
@@ -588,21 +610,29 @@ void WalkClipWeightCallback(void* pUserData)
             }
         }
 
-        if (gCurrentAnimationIndex == 2)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND)
         {
             for (size_t i = 0; i < gNumRigs; i++)
             {
                 gWalkClipController[i].mWeight = gUIData.mPartialBlendingParams.mWalkClipWeight;
             }
         }
+
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_ADDITIVEBLEND)
+        {
+            for (size_t i = 0; i < gNumRigs; i++)
+            {
+                gWalkClipController[i].mWeight = gUIData.mAdditiveBlendingParams.mWalkClipWeight;
+            }
+        }
     }
     else
     {
-        if (gCurrentAnimationIndex == 1)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_BLEND)
         {
             gUIData.mBlendingParams.mWalkClipWeight = gWalkClipController[0].mWeight;
         }
-        if (gCurrentAnimationIndex == 2)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND)
         {
             gUIData.mPartialBlendingParams.mWalkClipWeight = gWalkClipController[0].mWeight;
         }
@@ -612,9 +642,10 @@ void WalkClipWeightCallback(void* pUserData)
 // JogClip Callbacks
 void JogClipPlayCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -628,9 +659,10 @@ void JogClipPlayCallback(void* pUserData)
 }
 void JogClipLoopCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -644,9 +676,10 @@ void JogClipLoopCallback(void* pUserData)
 }
 void JogClipTimeChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         gUIData.mJogClip.mPlay = false;
         for (size_t i = 0; i < gNumRigs; i++)
@@ -657,9 +690,10 @@ void JogClipTimeChangeCallback(void* pUserData)
 }
 void JogClipPlaybackSpeedChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -673,8 +707,9 @@ void JogClipPlaybackSpeedChangeCallback(void* pUserData)
 }
 void JogClipJointsWeightCallback(void* pUserData)
 {
-    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         SetWalkClipJointsWeightWithUIValues();
     }
@@ -685,10 +720,11 @@ void JogClipJointsWeightCallback(void* pUserData)
 }
 void JogClipWeightCallback(void* pUserData)
 {
-    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
-        if (gCurrentAnimationIndex == 1)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_BLEND)
         {
             for (size_t i = 0; i < gNumRigs; i++)
             {
@@ -698,7 +734,7 @@ void JogClipWeightCallback(void* pUserData)
     }
     else
     {
-        if (gCurrentAnimationIndex == 1)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_BLEND)
         {
             gUIData.mBlendingParams.mJogClipWeight = gJogClipController[0].mWeight;
         }
@@ -708,9 +744,10 @@ void JogClipWeightCallback(void* pUserData)
 // RunClip Callbacks
 void RunClipPlayCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -724,9 +761,10 @@ void RunClipPlayCallback(void* pUserData)
 }
 void RunClipLoopCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -740,9 +778,10 @@ void RunClipLoopCallback(void* pUserData)
 }
 void RunClipTimeChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         gUIData.mRunClip.mPlay = false;
         for (size_t i = 0; i < gNumRigs; i++)
@@ -753,9 +792,10 @@ void RunClipTimeChangeCallback(void* pUserData)
 }
 void RunClipPlaybackSpeedChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -769,10 +809,11 @@ void RunClipPlaybackSpeedChangeCallback(void* pUserData)
 }
 void RunClipWeightCallback(void* pUserData)
 {
-    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
-        if (gCurrentAnimationIndex == 1)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_BLEND)
         {
             for (size_t i = 0; i < gNumRigs; i++)
             {
@@ -782,7 +823,7 @@ void RunClipWeightCallback(void* pUserData)
     }
     else
     {
-        if (gCurrentAnimationIndex == 1)
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_BLEND)
         {
             gUIData.mBlendingParams.mRunClipWeight = gRunClipController[0].mWeight;
         }
@@ -792,9 +833,10 @@ void RunClipWeightCallback(void* pUserData)
 // NeckClip Callbacks
 void NeckClipPlayCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -808,9 +850,10 @@ void NeckClipPlayCallback(void* pUserData)
 }
 void NeckClipLoopCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -824,6 +867,7 @@ void NeckClipLoopCallback(void* pUserData)
 }
 void NeckCrackClipTimeChangeCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     for (size_t i = 0; i < gNumRigs; i++)
     {
         gNeckCrackClipController[i].SetTimeRatioHard(gUIData.mNeckCrackClip.mAnimationTime);
@@ -831,9 +875,10 @@ void NeckCrackClipTimeChangeCallback(void* pUserData)
 }
 void NeckClipPlaybackSpeedChangeCallback(void* pUserData)
 {
-    if ((gCurrentAnimationIndex != 1 && gCurrentAnimationIndex != 2) ||
-        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 1) ||
-        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == 2))
+    UNREF_PARAM(pUserData);
+    if ((gCurrentAnimationIndex != ANIMATION_INDEX_BLEND && gCurrentAnimationIndex != ANIMATION_INDEX_PARTIALBLEND) ||
+        (!gUIData.mBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_BLEND) ||
+        (!gUIData.mPartialBlendingParams.mAutoSetBlendParams && gCurrentAnimationIndex == ANIMATION_INDEX_PARTIALBLEND))
     {
         for (size_t i = 0; i < gNumRigs; i++)
         {
@@ -852,15 +897,26 @@ void SetNeckCrackClipJointsWeightWithUIValues()
 }
 void NeckCrackClipJointsWeightCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     if (gUIData.mUpperBodyMask.mEnableMask)
     {
         SetNeckCrackClipJointsWeightWithUIValues();
     }
 }
 
+void NeckCrackClipWeightCallback(void* pUserData)
+{
+    UNREF_PARAM(pUserData);
+    for (size_t i = 0; i < gNumRigs; i++)
+    {
+        gNeckCrackClipController[i].mWeight = gUIData.mAdditiveBlendingParams.mNeckCrackClipWeight;
+    }
+}
+
 // When the mask is enabled and disabled
 void EnableMaskCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     if (gUIData.mUpperBodyMask.mEnableMask)
     {
         SetNeckCrackClipJointsWeightWithUIValues();
@@ -983,10 +1039,19 @@ void ResetAnimations()
     gUIData.mNeckCrackClip.mLoop = true;
 }
 
+void ResetInverseKinematics()
+{
+    gUIData.mIKParams.mTwoBoneIK = false;
+    gUIData.mIKParams.mAim = false;
+    gUIData.mIKParams.mTwoBoneIK = 0.0f;
+}
+
 void RunAnimation(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     // this resets all values to the defaults
     ResetAnimations();
+    ResetInverseKinematics();
 
     for (size_t i = 0; i < ANIMATIONCOUNT; i++)
     {
@@ -1003,6 +1068,7 @@ void RunAnimation(void* pUserData)
 
 void RandomTimeCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     for (size_t i = 0; i < gNumRigs; i++)
     {
         float randomTime = randomFloat(0.0f, 1.0f);
@@ -1012,6 +1078,7 @@ void RandomTimeCallback(void* pUserData)
 
 void ThresholdChangeCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     if (gCurrentAnimationIndex == 1)
     {
         for (size_t i = 0; i < gNumRigs; i++)
@@ -1037,6 +1104,7 @@ void ThresholdChangeCallback(void* pUserData)
 
 void BlendRatioChangeCallback(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     for (size_t i = 0; i < gNumRigs; i++)
     {
         gAnimations[1][i].mBlendRatio = gUIData.mBlendingParams.mBlendRatio;
@@ -1048,6 +1116,7 @@ void SetUpAnimationSpecificGuiWindows()
     unsigned uintValMin = 1;
     unsigned uintValMax = MAX_ANIMATED_OBJECTS;
     unsigned sliderStepSizeUint = 1;
+    float    sliderStepSizeFloat = 0.001f;
 
     enum
     {
@@ -1082,6 +1151,14 @@ void SetUpAnimationSpecificGuiWindows()
 
     enum
     {
+        ATTACHMENT_PARAM_SLIDER_JOINT_INDEX,
+        ATTACHMENT_PARAM_SLIDER_OFFSET,
+
+        ATTACHMENT_PARAM_COUNT
+    };
+
+    enum
+    {
         BLEND_PARAM_CHECKBOX_AUTOBLEND,
         BLEND_PARAM_SLIDER_BLENDRATIO,
         BLEND_PARAM_SLIDER_WALKCLIPWEIGHT,
@@ -1094,15 +1171,18 @@ void SetUpAnimationSpecificGuiWindows()
 
     enum
     {
-        PARIALBLEND_PARAM_CHECKBOX_AUTOBLEND,
-        PARIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT,
-        PARIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT,
-        PARIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT,
-        PARIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT,
-        PARIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT,
-        PARIALBLEND_PARAM_SLIDER_THRESHOLD,
+        // Used when auto blend is enabled
+        PARTIALBLEND_PARAM_CHECKBOX_AUTOBLEND,
+        PARTIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT,
 
-        PARIALBLEND_PARAM_COUNT
+        // Used when auto blend is disabled.
+        PARTIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT,
+        PARTIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT,
+        PARTIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT,
+        PARTIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT,
+        PARTIALBLEND_PARAM_SLIDER_THRESHOLD,
+
+        PARTIALBLEND_PARAM_COUNT
     };
 
     enum
@@ -1139,8 +1219,12 @@ void SetUpAnimationSpecificGuiWindows()
         CLIP_PARAM_COUNT
     };
 
+    // only way to get statically allocated array. maxWidgetCount need to be a compile time constant b/c cpp does not allow
+    // run-time array.
     static const uint32_t maxWidgetCount =
-        max((uint32_t)GENERAL_PARAM_COUNT, max((uint32_t)IK_PARAM_COUNT, max((uint32_t)THREADING_PARAM_COUNT, (uint32_t)CLIP_PARAM_COUNT)));
+        max((uint32_t)PARTIALBLEND_PARAM_COUNT,
+            max((uint32_t)GENERAL_PARAM_COUNT,
+                max((uint32_t)IK_PARAM_COUNT, max((uint32_t)THREADING_PARAM_COUNT, (uint32_t)CLIP_PARAM_COUNT))));
 
     UIWidget  widgetBases[maxWidgetCount] = {};
     UIWidget* widgets[maxWidgetCount];
@@ -1212,8 +1296,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[GENERAL_PARAM_CHECKBOX_ANIMATECAMERA]->pOnEdited = AnimatedCameraChangeCallback;
         strcpy(widgets[GENERAL_PARAM_CHECKBOX_ANIMATECAMERA]->mLabel, "Animate Camera");
 
-        luaRegisterWidget(uiCreateComponentWidget(pStandaloneAnimationsGUIWindow, "General Settings", &CollapsingGeneralSettingsWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "General Settings", &CollapsingGeneralSettingsWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // THREADING CONTROL
         //
@@ -1248,8 +1332,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[THREADING_PARAM_SLIDER_GRAINSIZE]->pWidget = &grainSize;
         widgets[THREADING_PARAM_SLIDER_GRAINSIZE]->pOnEdited = NULL;
 
-        luaRegisterWidget(uiCreateComponentWidget(pStandaloneAnimationsGUIWindow, "Threading Control", &CollapsingThreadingControlWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "Threading Control", &CollapsingThreadingControlWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // INVERSE KINEMATICS
         //
@@ -1281,8 +1365,38 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[IK_PARAM_SLIDER_FOOTTWOBONE]->pWidget = &footTwoBoneIK;
         widgets[IK_PARAM_SLIDER_FOOTTWOBONE]->pOnEdited = NULL;
 
-        luaRegisterWidget(uiCreateComponentWidget(pStandaloneAnimationsGUIWindow, "Inverse Kinematics", &CollapsingIKWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "Inverse Kinematics", &CollapsingIKWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
+
+        // ATTACHMENT
+        CollapsingHeaderWidget CollapsingAttachmentWidgets;
+        CollapsingAttachmentWidgets.pGroupedWidgets = widgets;
+        CollapsingAttachmentWidgets.mWidgetsCount = 2;
+
+        // Joint Index - Slider
+        SliderUintWidget jointIndex;
+        jointIndex.pData = &gUIData.mAttachedObject.mJointIndex;
+        jointIndex.mMin = 0;
+        jointIndex.mMax = gStickFigureRig.mNumJoints - 1;
+        jointIndex.mStep = sliderStepSizeUint;
+        strcpy(widgets[ATTACHMENT_PARAM_SLIDER_JOINT_INDEX]->mLabel, "Joint Index");
+        widgets[ATTACHMENT_PARAM_SLIDER_JOINT_INDEX]->mType = WIDGET_TYPE_SLIDER_UINT;
+        widgets[ATTACHMENT_PARAM_SLIDER_JOINT_INDEX]->pWidget = &jointIndex;
+        widgets[ATTACHMENT_PARAM_SLIDER_JOINT_INDEX]->pOnEdited = NULL;
+
+        // Cubeoid offset (translation) - Slider
+        SliderFloat3Widget offset;
+        offset.pData = &gUIData.mAttachedObject.mOffset;
+        offset.mMin = { -1.0f, -1.0f, -1.0f };
+        offset.mMax = { 1.0f, 1.0f, 1.0f };
+        offset.mStep = { sliderStepSizeFloat, sliderStepSizeFloat, sliderStepSizeFloat };
+        strcpy(widgets[ATTACHMENT_PARAM_SLIDER_OFFSET]->mLabel, "offset");
+        widgets[ATTACHMENT_PARAM_SLIDER_OFFSET]->mType = WIDGET_TYPE_SLIDER_FLOAT3;
+        widgets[ATTACHMENT_PARAM_SLIDER_OFFSET]->pWidget = &offset;
+        widgets[ATTACHMENT_PARAM_SLIDER_OFFSET]->pOnEdited = NULL;
+
+        luaRegisterWidget(uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "Attachment", &CollapsingAttachmentWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
     }
 
     // SET UP GUI FOR PLAYBACK EXAMPLE
@@ -1333,8 +1447,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &StandClipPlaybackSpeedChangeCallback;
 
         // Add all widgets to the window
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[0], "Stand Clip", &CollapsingStandClipWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(
+            uiAddComponentWidget(AnimationControlsGUIWindow[0], "Stand Clip", &CollapsingStandClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
     }
 
     // SET UP GUI FOR BLENDING EXAMPLE
@@ -1409,8 +1523,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[BLEND_PARAM_SLIDER_THRESHOLD]->pWidget = &threshold;
         widgets[BLEND_PARAM_SLIDER_THRESHOLD]->pOnEdited = &ThresholdChangeCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[1], "Blend Parameters", &CollapsingBlendParamsWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[1], "Blend Parameters", &CollapsingBlendParamsWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // WALK CLIP
         //
@@ -1457,7 +1571,7 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &WalkClipPlaybackSpeedChangeCallback;
 
         luaRegisterWidget(
-            uiCreateComponentWidget(AnimationControlsGUIWindow[1], "Walk Clip", &CollapsingWalkClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
+            uiAddComponentWidget(AnimationControlsGUIWindow[1], "Walk Clip", &CollapsingWalkClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
 
         // JOG CLIP
         //
@@ -1504,7 +1618,7 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &JogClipPlaybackSpeedChangeCallback;
 
         luaRegisterWidget(
-            uiCreateComponentWidget(AnimationControlsGUIWindow[1], "Jog Clip", &CollapsingJogClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
+            uiAddComponentWidget(AnimationControlsGUIWindow[1], "Jog Clip", &CollapsingJogClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
 
         // RUN CLIP
         //
@@ -1551,7 +1665,7 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &RunClipPlaybackSpeedChangeCallback;
 
         luaRegisterWidget(
-            uiCreateComponentWidget(AnimationControlsGUIWindow[1], "Run Clip", &CollapsingRunClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
+            uiAddComponentWidget(AnimationControlsGUIWindow[1], "Run Clip", &CollapsingRunClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
     }
 
     // SET UP GUI FOR PartialBlending EXAMPLE
@@ -1561,15 +1675,15 @@ void SetUpAnimationSpecificGuiWindows()
         //
         CollapsingHeaderWidget CollapsingBlendParamsWidgets;
         CollapsingBlendParamsWidgets.pGroupedWidgets = widgets;
-        CollapsingBlendParamsWidgets.mWidgetsCount = CLIP_PARAM_COUNT;
+        CollapsingBlendParamsWidgets.mWidgetsCount = PARTIALBLEND_PARAM_COUNT;
 
         // AutoSetBlendParams - Checkbox
         CheckboxWidget autoBlend;
         autoBlend.pData = &gUIData.mPartialBlendingParams.mAutoSetBlendParams;
-        widgets[PARIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->mType = WIDGET_TYPE_CHECKBOX;
-        widgets[PARIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->pWidget = &autoBlend;
-        strcpy(widgets[PARIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->mLabel, "Auto Set Blend Params");
-        widgets[PARIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->pOnEdited = &AutoSetBlendParamsCallback;
+        widgets[PARTIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->mType = WIDGET_TYPE_CHECKBOX;
+        widgets[PARTIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->pWidget = &autoBlend;
+        strcpy(widgets[PARTIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->mLabel, "Auto Set Blend Params");
+        widgets[PARTIALBLEND_PARAM_CHECKBOX_AUTOBLEND]->pOnEdited = &AutoSetBlendParamsCallback;
 
         // UpperBodyWeight - Slider
         SliderFloatWidget upperBodyWeight;
@@ -1577,10 +1691,10 @@ void SetUpAnimationSpecificGuiWindows()
         upperBodyWeight.mMin = 0.0f;
         upperBodyWeight.mMax = 1.0f;
         upperBodyWeight.mStep = 0.01f;
-        strcpy(widgets[PARIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->mLabel, "Upper Body Weight");
-        widgets[PARIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
-        widgets[PARIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->pWidget = &upperBodyWeight;
-        widgets[PARIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->pOnEdited = NULL;
+        strcpy(widgets[PARTIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->mLabel, "Upper Body Weight");
+        widgets[PARTIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        widgets[PARTIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->pWidget = &upperBodyWeight;
+        widgets[PARTIALBLEND_PARAM_SLIDER_UPPERBODYWEIGHT]->pOnEdited = &UpperBodyWeightCallback;
 
         // Stand Clip Weight - Slider
         SliderFloatWidget standClipWeight;
@@ -1588,10 +1702,10 @@ void SetUpAnimationSpecificGuiWindows()
         standClipWeight.mMin = 0.0f;
         standClipWeight.mMax = 1.0f;
         standClipWeight.mStep = 0.01f;
-        strcpy(widgets[PARIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->mLabel, "Clip Weight [Stand]");
-        widgets[PARIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
-        widgets[PARIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->pWidget = &standClipWeight;
-        widgets[PARIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->pOnEdited = &StandClipWeightCallback;
+        strcpy(widgets[PARTIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->mLabel, "Clip Weight [Stand]");
+        widgets[PARTIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        widgets[PARTIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->pWidget = &standClipWeight;
+        widgets[PARTIALBLEND_PARAM_SLIDER_STANDCLIPWEIGHT]->pOnEdited = &StandClipWeightCallback;
 
         // Stand Joints Weight - Slider
         SliderFloatWidget standJointsWeight;
@@ -1599,10 +1713,10 @@ void SetUpAnimationSpecificGuiWindows()
         standJointsWeight.mMin = 0.0f;
         standJointsWeight.mMax = 1.0f;
         standJointsWeight.mStep = 0.01f;
-        strcpy(widgets[PARIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->mLabel, "Upper Body Weight");
-        widgets[PARIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
-        widgets[PARIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->pWidget = &standJointsWeight;
-        widgets[PARIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->pOnEdited = &StandClipJointsWeightCallback;
+        strcpy(widgets[PARTIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->mLabel, "Upper Body Weight");
+        widgets[PARTIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        widgets[PARTIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->pWidget = &standJointsWeight;
+        widgets[PARTIALBLEND_PARAM_SLIDER_STANDJOINTWEIGHT]->pOnEdited = &StandClipJointsWeightCallback;
 
         // Walk Clip Weight - Slider
         SliderFloatWidget walkClipWeight;
@@ -1610,10 +1724,10 @@ void SetUpAnimationSpecificGuiWindows()
         walkClipWeight.mMin = 0.0f;
         walkClipWeight.mMax = 1.0f;
         walkClipWeight.mStep = 0.01f;
-        strcpy(widgets[PARIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->mLabel, "Clip Weight [Walk]");
-        widgets[PARIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
-        widgets[PARIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->pWidget = &walkClipWeight;
-        widgets[PARIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->pOnEdited = &WalkClipWeightCallback;
+        strcpy(widgets[PARTIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->mLabel, "Clip Weight [Walk]");
+        widgets[PARTIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        widgets[PARTIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->pWidget = &walkClipWeight;
+        widgets[PARTIALBLEND_PARAM_SLIDER_WALKCLIPWEIGHT]->pOnEdited = &WalkClipWeightCallback;
 
         // Walk Joints Weight - Slider
         SliderFloatWidget walkJointsWeight;
@@ -1621,10 +1735,10 @@ void SetUpAnimationSpecificGuiWindows()
         walkJointsWeight.mMin = 0.0f;
         walkJointsWeight.mMax = 1.0f;
         walkJointsWeight.mStep = 0.01f;
-        strcpy(widgets[PARIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->mLabel, "Upper Body Weight");
-        widgets[PARIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
-        widgets[PARIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->pWidget = &walkJointsWeight;
-        widgets[PARIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->pOnEdited = &WalkClipJointsWeightCallback;
+        strcpy(widgets[PARTIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->mLabel, "Lower Body Weight");
+        widgets[PARTIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        widgets[PARTIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->pWidget = &walkJointsWeight;
+        widgets[PARTIALBLEND_PARAM_SLIDER_WALKJOINTWEIGHT]->pOnEdited = &WalkClipJointsWeightCallback;
 
         // Threshold - Slider
         SliderFloatWidget threshold;
@@ -1632,13 +1746,13 @@ void SetUpAnimationSpecificGuiWindows()
         threshold.mMin = 0.01f;
         threshold.mMax = 1.0f;
         threshold.mStep = 0.01f;
-        strcpy(widgets[PARIALBLEND_PARAM_SLIDER_THRESHOLD]->mLabel, "Threshold");
-        widgets[PARIALBLEND_PARAM_SLIDER_THRESHOLD]->mType = WIDGET_TYPE_SLIDER_FLOAT;
-        widgets[PARIALBLEND_PARAM_SLIDER_THRESHOLD]->pWidget = &threshold;
-        widgets[PARIALBLEND_PARAM_SLIDER_THRESHOLD]->pOnEdited = &ThresholdChangeCallback;
+        strcpy(widgets[PARTIALBLEND_PARAM_SLIDER_THRESHOLD]->mLabel, "Threshold");
+        widgets[PARTIALBLEND_PARAM_SLIDER_THRESHOLD]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        widgets[PARTIALBLEND_PARAM_SLIDER_THRESHOLD]->pWidget = &threshold;
+        widgets[PARTIALBLEND_PARAM_SLIDER_THRESHOLD]->pOnEdited = &ThresholdChangeCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[2], "Blend Parameters", &CollapsingBlendParamsWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[2], "Blend Parameters", &CollapsingBlendParamsWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // UPPER BODY ROOT
         //
@@ -1657,8 +1771,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[UPPERBODYROOT_PARAM_SLIDER_UPPERBODYJOINTINDEX]->pWidget = &upperBodyJointIndex;
         widgets[UPPERBODYROOT_PARAM_SLIDER_UPPERBODYJOINTINDEX]->pOnEdited = &UpperBodyJointIndexCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[2], "Upper Body Root", &CollapsingUpperBodyRootWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[2], "Upper Body Root", &CollapsingUpperBodyRootWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // STAND CLIP
         //
@@ -1704,8 +1818,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pWidget = &playbackTime;
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &StandClipPlaybackSpeedChangeCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[2], "StandClip (UpperBody)", &CollapsingStandClipWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[2], "StandClip (UpperBody)", &CollapsingStandClipWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // WALK CLIP
         //
@@ -1751,8 +1865,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pWidget = &playbackTimeWalk;
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &WalkClipPlaybackSpeedChangeCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[2], "Walk Clip (Lower Body)", &CollapsingWalkClipWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[2], "Walk Clip (Lower Body)", &CollapsingWalkClipWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
     }
 
     // SET UP GUI FOR AdditiveBlending EXAMPLE
@@ -1784,10 +1898,10 @@ void SetUpAnimationSpecificGuiWindows()
         strcpy(widgets[ADDITIVEBLEND_PARAM_SLIDER_NECKCRACKCLIPKWEIGHT]->mLabel, "Clip Weight [NeckCrack]");
         widgets[ADDITIVEBLEND_PARAM_SLIDER_NECKCRACKCLIPKWEIGHT]->mType = WIDGET_TYPE_SLIDER_FLOAT;
         widgets[ADDITIVEBLEND_PARAM_SLIDER_NECKCRACKCLIPKWEIGHT]->pWidget = &neckCrackClipWeight;
-        widgets[ADDITIVEBLEND_PARAM_SLIDER_NECKCRACKCLIPKWEIGHT]->pOnEdited = NULL;
+        widgets[ADDITIVEBLEND_PARAM_SLIDER_NECKCRACKCLIPKWEIGHT]->pOnEdited = &NeckCrackClipWeightCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[3], "Blend Parameters", &CollapsingBlendParamsWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[3], "Blend Parameters", &CollapsingBlendParamsWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // UPPER BODY MASK
         //
@@ -1825,8 +1939,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[UPPERBODYMASK_PARAM_SLIDER_UPPERBODYJOINTWEIGHT]->pWidget = &upperBodyJointIndex;
         widgets[UPPERBODYMASK_PARAM_SLIDER_UPPERBODYJOINTWEIGHT]->pOnEdited = &UpperBodyJointIndexCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[3], "Upper Body Masking", &CollapsingUpperBodyMaskWidgets,
-                                                  WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[3], "Upper Body Masking", &CollapsingUpperBodyMaskWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
 
         // WALK CLIP
         //
@@ -1873,7 +1987,7 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &WalkClipPlaybackSpeedChangeCallback;
 
         luaRegisterWidget(
-            uiCreateComponentWidget(AnimationControlsGUIWindow[3], "Walk Clip", &CollapsingWalkClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
+            uiAddComponentWidget(AnimationControlsGUIWindow[3], "Walk Clip", &CollapsingWalkClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
 
         // NECK CRACK CLIP
         //
@@ -1919,8 +2033,8 @@ void SetUpAnimationSpecificGuiWindows()
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pWidget = &playbackTimeNeck;
         widgets[CLIP_PARAM_SLIDER_PLAYBACK]->pOnEdited = &NeckClipPlaybackSpeedChangeCallback;
 
-        luaRegisterWidget(uiCreateComponentWidget(AnimationControlsGUIWindow[3], "NeckCrack Clip (Additive)",
-                                                  &CollapsingNeckCrackClipWidgets, WIDGET_TYPE_COLLAPSING_HEADER));
+        luaRegisterWidget(uiAddComponentWidget(AnimationControlsGUIWindow[3], "NeckCrack Clip (Additive)", &CollapsingNeckCrackClipWidgets,
+                                               WIDGET_TYPE_COLLAPSING_HEADER));
     }
 
     // Animations
@@ -1928,11 +2042,11 @@ void SetUpAnimationSpecificGuiWindows()
     ddAnimations.pData = &gCurrentAnimationIndex;
     ddAnimations.pNames = gAnimationNames;
     ddAnimations.mCount = ANIMATIONCOUNT;
-    UIWidget* pDdAnimation = uiCreateComponentWidget(pStandaloneAnimationsGUIWindow, "Animation", &ddAnimations, WIDGET_TYPE_DROPDOWN);
+    UIWidget* pDdAnimation = uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "Animation", &ddAnimations, WIDGET_TYPE_DROPDOWN);
     luaRegisterWidget(pDdAnimation);
 
     ButtonWidget bRunAnimation;
-    UIWidget* pRunAnimation = uiCreateComponentWidget(pStandaloneAnimationsGUIWindow, "Run Animation", &bRunAnimation, WIDGET_TYPE_BUTTON);
+    UIWidget*    pRunAnimation = uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "Run Animation", &bRunAnimation, WIDGET_TYPE_BUTTON);
     uiSetWidgetOnEditedCallback(pRunAnimation, nullptr, RunAnimation);
     luaRegisterWidget(pRunAnimation);
 
@@ -1941,10 +2055,10 @@ void SetUpAnimationSpecificGuiWindows()
     ddTestScripts.pData = &gCurrentScriptIndex;
     ddTestScripts.pNames = gTestScripts;
     ddTestScripts.mCount = sizeof(gTestScripts) / sizeof(gTestScripts[0]);
-    luaRegisterWidget(uiCreateComponentWidget(pStandaloneAnimationsGUIWindow, "Test Scripts", &ddTestScripts, WIDGET_TYPE_DROPDOWN));
+    luaRegisterWidget(uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "Test Scripts", &ddTestScripts, WIDGET_TYPE_DROPDOWN));
 
     ButtonWidget bRunScript;
-    UIWidget*    pRunScript = uiCreateComponentWidget(pStandaloneAnimationsGUIWindow, "Run Script", &bRunScript, WIDGET_TYPE_BUTTON);
+    UIWidget*    pRunScript = uiAddComponentWidget(pStandaloneAnimationsGUIWindow, "Run Script", &bRunScript, WIDGET_TYPE_BUTTON);
     uiSetWidgetOnEditedCallback(pRunScript, nullptr, RunScript);
     luaRegisterWidget(pRunScript);
 }
@@ -1958,16 +2072,6 @@ public:
     bool Init() override
     {
         initHiresTimer(&gAnimationUpdateTimer);
-
-        // FILE PATHS
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_MESHES, "Meshes");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Fonts");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_ANIMATIONS, "Animation");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
-        fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_SCREENSHOTS, "Screenshots");
-        fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_DEBUG, "Debug");
 
         // RIG
         //
@@ -2145,25 +2249,31 @@ public:
         //
         RendererDesc settings;
         memset(&settings, 0, sizeof(settings));
+        initGPUConfiguration(settings.pExtendedSettings);
         initRenderer(GetName(), &settings, &pRenderer);
-        if (!pRenderer) // check for init success
+        // check for init success
+        if (!pRenderer)
+        {
+            ShowUnsupportedMessage("Failed To Initialize renderer!");
             return false;
+        }
+        setupGPUConfigurationPlatformParameters(pRenderer, settings.pExtendedSettings);
 
         // CREATE COMMAND LIST AND GRAPHICS/COMPUTE QUEUES
         //
         QueueDesc queueDesc = {};
         queueDesc.mType = QUEUE_TYPE_GRAPHICS;
         queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
-        addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
+        initQueue(pRenderer, &queueDesc, &pGraphicsQueue);
 
         GpuCmdRingDesc cmdRingDesc = {};
         cmdRingDesc.pQueue = pGraphicsQueue;
         cmdRingDesc.mPoolCount = gDataBufferCount;
         cmdRingDesc.mCmdPerPoolCount = 1;
         cmdRingDesc.mAddSyncPrimitives = true;
-        addGpuCmdRing(pRenderer, &cmdRingDesc, &gGraphicsCmdRing);
+        initGpuCmdRing(pRenderer, &cmdRingDesc, &gGraphicsCmdRing);
 
-        addSemaphore(pRenderer, &pImageAcquiredSemaphore);
+        initSemaphore(pRenderer, &pImageAcquiredSemaphore);
 
         // INITIALIZE RESOURCE/DEBUG SYSTEMS
         //
@@ -2193,11 +2303,9 @@ public:
         // Initialize micro profiler and its UI.
         ProfilerDesc profiler = {};
         profiler.pRenderer = pRenderer;
-        profiler.mWidthUI = mSettings.mWidth;
-        profiler.mHeightUI = mSettings.mHeight;
         initProfiler(&profiler);
 
-        gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
+        gGpuProfileToken = initGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
 
         // INITIALIZE PIPILINE STATES
         //
@@ -2328,34 +2436,6 @@ public:
 
         /************************************************************************/
 
-        // Add the GUI Panels/Windows
-        vec2            UIPosition = { mSettings.mWidth * 0.006f, mSettings.mHeight * 0.17f };
-        vec2            UIPanelSize = { 650, 1000 };
-        UIComponentDesc guiDesc = {};
-        guiDesc.mStartPosition = UIPosition;
-        guiDesc.mStartSize = UIPanelSize;
-        guiDesc.mFontID = 0;
-        uiCreateComponent("Animations", &guiDesc, &pStandaloneAnimationsGUIWindow);
-
-        UIPosition = { mSettings.mWidth * 0.15f, mSettings.mHeight * 0.17f };
-        UIPanelSize = { 650, 1000 };
-        guiDesc = {};
-        guiDesc.mStartPosition = UIPosition;
-        guiDesc.mStartSize = UIPanelSize;
-        guiDesc.mFontID = 0;
-        uiCreateComponent("Stand Animation", &guiDesc, &AnimationControlsGUIWindow[0]);
-
-        uiCreateComponent("Blend Animation", &guiDesc, &AnimationControlsGUIWindow[1]);
-        uiSetComponentActive(AnimationControlsGUIWindow[1], false);
-
-        uiCreateComponent("PartialBlending Animation", &guiDesc, &AnimationControlsGUIWindow[2]);
-        uiSetComponentActive(AnimationControlsGUIWindow[2], false);
-
-        uiCreateComponent("AdditiveBlending Animation", &guiDesc, &AnimationControlsGUIWindow[3]);
-        uiSetComponentActive(AnimationControlsGUIWindow[3], false);
-
-        SetUpAnimationSpecificGuiWindows();
-
         // SETUP THE MAIN CAMERA
         //
         CameraMotionParameters cmp{ 50.0f, 75.0f, 150.0f };
@@ -2369,100 +2449,8 @@ public:
         //
         threadSystemInit(&gThreadSystem, &gThreadSystemInitDescDefault);
 
-        InputSystemDesc inputDesc = {};
-        inputDesc.pRenderer = pRenderer;
-        inputDesc.pWindow = pWindow;
-        inputDesc.pJoystickTexture = "circlepad.tex";
-        if (!initInputSystem(&inputDesc))
-            return false;
-
         // App Actions
-        InputActionDesc actionDesc = { DefaultInputActions::DUMP_PROFILE_DATA,
-                                       [](InputActionContext* ctx)
-                                       {
-                                           dumpProfileData(((Renderer*)ctx->pUserData)->pName);
-                                           return true;
-                                       },
-                                       pRenderer };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TOGGLE_FULLSCREEN,
-                       [](InputActionContext* ctx)
-                       {
-                           WindowDesc* winDesc = ((IApp*)ctx->pUserData)->pWindow;
-                           if (winDesc->fullScreen)
-                               winDesc->borderlessWindow
-                                   ? setBorderless(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect))
-                                   : setWindowed(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect));
-                           else
-                               setFullscreen(winDesc);
-                           return true;
-                       },
-                       this };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::EXIT, [](InputActionContext* ctx)
-                       {
-                           requestShutdown();
-                           return true;
-                       } };
-        addInputAction(&actionDesc);
-        InputActionCallback onUIInput = [](InputActionContext* ctx)
-        {
-            if (ctx->mActionId > UISystemInputActions::UI_ACTION_START_ID_)
-            {
-                uiOnInput(ctx->mActionId, ctx->mBool, ctx->pPosition, &ctx->mFloat2);
-            }
-            return true;
-        };
-
-        typedef bool (*CameraInputHandler)(InputActionContext * ctx, DefaultInputActions::DefaultInputAction action);
-        static CameraInputHandler onCameraInput = [](InputActionContext* ctx, DefaultInputActions::DefaultInputAction action)
-        {
-            if (*(ctx->pCaptured))
-            {
-                float2 delta = uiIsFocused() ? float2(0.f, 0.f) : ctx->mFloat2;
-                switch (action)
-                {
-                case DefaultInputActions::ROTATE_CAMERA:
-                    pCameraController->onRotate(delta);
-                    break;
-                case DefaultInputActions::TRANSLATE_CAMERA:
-                    pCameraController->onMove(delta);
-                    break;
-                case DefaultInputActions::TRANSLATE_CAMERA_VERTICAL:
-                    pCameraController->onMoveY(delta[0]);
-                    break;
-                default:
-                    break;
-                }
-            }
-            return true;
-        };
-        actionDesc = { DefaultInputActions::CAPTURE_INPUT,
-                       [](InputActionContext* ctx)
-                       {
-                           setEnableCaptureInput(!uiIsFocused() && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
-                           return true;
-                       },
-                       NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::ROTATE_CAMERA,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::ROTATE_CAMERA); }, NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA); }, NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA_VERTICAL,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA_VERTICAL); }, NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::RESET_CAMERA, [](InputActionContext* ctx)
-                       {
-                           if (!uiWantTextInput())
-                               pCameraController->resetView();
-                           return true;
-                       } };
-        addInputAction(&actionDesc);
-        GlobalInputActionDesc globalInputActionDesc = { GlobalInputActionDesc::ANY_BUTTON_ACTION, onUIInput, this };
-        setGlobalInputAction(&globalInputActionDesc);
+        AddCustomInputBindings();
 
         gFrameIndex = 0;
         waitForAllResourceLoads();
@@ -2472,15 +2460,16 @@ public:
         tf_free(pJointPoints);
         tf_free(pBonePoints);
         tf_free(pCuboidPoints);
+        initScreenshotInterface(pRenderer, pGraphicsQueue);
 
         return true;
     }
 
     void Exit() override
     {
+        exitScreenshotInterface();
         threadSystemWaitIdle(gThreadSystem);
 
-        exitInputSystem();
         exitCameraController(pCameraController);
 
         for (size_t i = 0; i < MAX_ANIMATED_OBJECTS; i++)
@@ -2530,16 +2519,17 @@ public:
         removeResource(pBoneVertexBuffer);
         removeResource(pPlaneVertexBuffer);
 
-        removeSemaphore(pRenderer, pImageAcquiredSemaphore);
-        removeGpuCmdRing(pRenderer, &gGraphicsCmdRing);
+        exitSemaphore(pRenderer, pImageAcquiredSemaphore);
+        exitGpuCmdRing(pRenderer, &gGraphicsCmdRing);
 
         // Animation data
         gOzzLogoSkeletonBatcher.Exit();
         gSkeletonBatcher.Exit();
 
         exitResourceLoaderInterface(pRenderer);
-        removeQueue(pRenderer, pGraphicsQueue);
+        exitQueue(pRenderer, pGraphicsQueue);
         exitRenderer(pRenderer);
+        exitGPUConfiguration();
         pRenderer = NULL;
     }
 
@@ -2547,6 +2537,36 @@ public:
     {
         if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
         {
+            loadProfilerUI(mSettings.mWidth, mSettings.mHeight);
+
+            // Add the GUI Panels/Windows
+            vec2            UIPosition = { mSettings.mWidth * 0.006f, mSettings.mHeight * 0.17f };
+            vec2            UIPanelSize = { 650, 1000 };
+            UIComponentDesc guiDesc = {};
+            guiDesc.mStartPosition = UIPosition;
+            guiDesc.mStartSize = UIPanelSize;
+            guiDesc.mFontID = 0;
+            uiAddComponent("Animations", &guiDesc, &pStandaloneAnimationsGUIWindow);
+
+            UIPosition = { mSettings.mWidth * 0.15f, mSettings.mHeight * 0.17f };
+            UIPanelSize = { 650, 1000 };
+            guiDesc = {};
+            guiDesc.mStartPosition = UIPosition;
+            guiDesc.mStartSize = UIPanelSize;
+            guiDesc.mFontID = 0;
+            uiAddComponent("Stand Animation", &guiDesc, &AnimationControlsGUIWindow[0]);
+
+            uiAddComponent("Blend Animation", &guiDesc, &AnimationControlsGUIWindow[1]);
+            uiSetComponentActive(AnimationControlsGUIWindow[1], false);
+
+            uiAddComponent("PartialBlending Animation", &guiDesc, &AnimationControlsGUIWindow[2]);
+            uiSetComponentActive(AnimationControlsGUIWindow[2], false);
+
+            uiAddComponent("AdditiveBlending Animation", &guiDesc, &AnimationControlsGUIWindow[3]);
+            uiSetComponentActive(AnimationControlsGUIWindow[3], false);
+
+            SetUpAnimationSpecificGuiWindows();
+
             if (!addSwapChain())
                 return false;
 
@@ -2594,8 +2614,6 @@ public:
         fontLoad.mLoadType = pReloadDesc->mType;
         loadFontSystem(&fontLoad);
 
-        initScreenshotInterface(pRenderer, pGraphicsQueue);
-
         return true;
     }
 
@@ -2618,6 +2636,13 @@ public:
         {
             removeSwapChain(pRenderer, pSwapChain);
             removeRenderTarget(pRenderer, pDepthBuffer);
+
+            uiRemoveComponent(AnimationControlsGUIWindow[3]);
+            uiRemoveComponent(AnimationControlsGUIWindow[2]);
+            uiRemoveComponent(AnimationControlsGUIWindow[1]);
+            uiRemoveComponent(AnimationControlsGUIWindow[0]);
+            uiRemoveComponent(pStandaloneAnimationsGUIWindow);
+            unloadProfilerUI();
         }
 
         if (pReloadDesc->mType & RELOAD_TYPE_SHADER)
@@ -2626,14 +2651,36 @@ public:
             removeRootSignatures();
             removeShaders();
         }
-
-        exitScreenshotInterface();
     }
 
     void Update(float deltaTime) override
     {
-        updateInputSystem(deltaTime, mSettings.mWidth, mSettings.mHeight);
-
+        if (!uiIsFocused())
+        {
+            pCameraController->onMove({ inputGetValue(0, CUSTOM_MOVE_X), inputGetValue(0, CUSTOM_MOVE_Y) });
+            pCameraController->onRotate({ inputGetValue(0, CUSTOM_LOOK_X), inputGetValue(0, CUSTOM_LOOK_Y) });
+            pCameraController->onMoveY(inputGetValue(0, CUSTOM_MOVE_UP));
+            if (inputGetValue(0, CUSTOM_RESET_VIEW))
+            {
+                pCameraController->resetView();
+            }
+            if (inputGetValue(0, CUSTOM_TOGGLE_FULLSCREEN))
+            {
+                toggleFullscreen(pWindow);
+            }
+            if (inputGetValue(0, CUSTOM_TOGGLE_UI))
+            {
+                uiToggleActive();
+            }
+            if (inputGetValue(0, CUSTOM_DUMP_PROFILE))
+            {
+                dumpProfileData(GetName());
+            }
+            if (inputGetValue(0, CUSTOM_EXIT))
+            {
+                requestShutdown();
+            }
+        }
         /************************************************************************/
         // Scene Update
         /************************************************************************/
@@ -2789,11 +2836,12 @@ public:
 
         // Set the transform of the attached object based on the updated world matrix of
         // the joint in the rig specified by the UI
+        // * TODO: add UI to modify mJointIndex
         gCuboidTransformMat = gStickFigureAnimObject[0].mJointWorldMats[gUIData.mAttachedObject.mJointIndex];
 
         // Compute the offset translation based on the UI values
-        mat4 offset =
-            mat4::translation(vec3(gUIData.mAttachedObject.mXOffset, gUIData.mAttachedObject.mYOffset, gUIData.mAttachedObject.mZOffset));
+        mat4 offset = mat4::translation(
+            vec3(gUIData.mAttachedObject.mOffset.x, gUIData.mAttachedObject.mOffset.y, gUIData.mAttachedObject.mOffset.z));
 
         gUniformDataCuboid.mToWorldMat[0] = gCuboidTransformMat * offset * gCuboidScaleMat;
         gUniformDataCuboid.mColor[0] = gCuboidColor;
@@ -2812,11 +2860,19 @@ public:
             // Record animation update time
             getHiresTimerUSec(&gAnimationUpdateTimer, true);
         }
+
+        // Automated blending controls the clip weights. Update gui after all threads are finished.
+        if (gCurrentAnimationIndex == ANIMATION_INDEX_BLEND && gUIData.mBlendingParams.mAutoSetBlendParams)
+        {
+            gUIData.mBlendingParams.mWalkClipWeight = gWalkClipController[0].mWeight;
+            gUIData.mBlendingParams.mJogClipWeight = gJogClipController[0].mWeight;
+            gUIData.mBlendingParams.mRunClipWeight = gRunClipController[0].mWeight;
+        }
     }
 
     void Draw() override
     {
-        if (pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
+        if ((bool)pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
         {
             waitQueueIdle(pGraphicsQueue);
             ::toggleVSync(pRenderer, &pSwapChain);
@@ -2959,11 +3015,11 @@ public:
         //// draw the object attached to the rig
         if (gUIData.mGeneralSettings.mDrawAttachedObject)
         {
-            const uint32_t stride = sizeof(float) * 6;
+            const uint32_t strideVb = sizeof(float) * 6;
             cmdBeginDebugMarker(cmd, 1, 0, 1, "Draw Cuboid");
             cmdBindPipeline(cmd, pCubePipeline);
             cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 1, pDescriptorSet);
-            cmdBindVertexBuffer(cmd, 1, &pCuboidVertexBuffer, &stride, NULL);
+            cmdBindVertexBuffer(cmd, 1, &pCuboidVertexBuffer, &strideVb, NULL);
             cmdDrawInstanced(cmd, gNumberOfCuboidPoints / 6, 0, 1, 0);
             cmdEndDebugMarker(cmd);
         }
@@ -3018,7 +3074,7 @@ public:
         submitDesc.pSignalFence = elem.pFence;
         queueSubmit(pGraphicsQueue, &submitDesc);
         QueuePresentDesc presentDesc = {};
-        presentDesc.mIndex = swapchainImageIndex;
+        presentDesc.mIndex = (uint8_t)swapchainImageIndex;
         presentDesc.mWaitSemaphoreCount = 1;
         presentDesc.ppWaitSemaphores = &elem.pSemaphore;
         presentDesc.pSwapChain = pSwapChain;
@@ -3079,12 +3135,12 @@ public:
     void addShaders()
     {
         ShaderLoadDesc planeShader = {};
-        planeShader.mStages[0].pFileName = "plane.vert";
-        planeShader.mStages[1].pFileName = "plane.frag";
+        planeShader.mVert.pFileName = "plane.vert";
+        planeShader.mFrag.pFileName = "plane.frag";
 
         ShaderLoadDesc cubeShader = {};
-        cubeShader.mStages[0].pFileName = "cube.vert";
-        cubeShader.mStages[1].pFileName = "cube.frag";
+        cubeShader.mVert.pFileName = "cube.vert";
+        cubeShader.mFrag.pFileName = "cube.frag";
 
         addShader(pRenderer, &planeShader, &pPlaneDrawShader);
         addShader(pRenderer, &cubeShader, &pCubeShader);

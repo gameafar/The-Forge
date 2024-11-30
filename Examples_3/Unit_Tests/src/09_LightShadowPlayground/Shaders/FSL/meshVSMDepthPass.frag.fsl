@@ -36,10 +36,14 @@ STRUCT(PsOut)
 #endif
 };
 
+#if defined(ORBIS) || defined(PROSPERO)
+SET_OUTPUT_FORMAT(default, FMT_UNORM16_ABGR)
+#endif
+
 PsOut PS_MAIN( PsInOpaque In )
 {
 	INIT_MAIN;
-	float d = In.position.z;
+	float d = 1.0 - In.position.z;
 	PsOut Out;
 	Out.moments.x = d;
 	Out.moments.y = d * d;

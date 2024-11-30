@@ -26,30 +26,11 @@
 
 #include "../GraphicsConfig.h"
 
-#ifdef ENABLE_NSIGHT_AFTERMATH
-#include "../ThirdParty/PrivateNvidia/NsightAftermath/include/AftermathTracker.h"
-#endif
-
 #include "../../Resources/ResourceLoader/ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 
 #include "../../OS/Interfaces/IOperatingSystem.h"
 #include "../../Utilities/Interfaces/ILog.h"
 #include "../../Utilities/Interfaces/IThread.h"
-
-#ifdef __cplusplus
-#ifndef MAKE_ENUM_FLAG
-#define MAKE_ENUM_FLAG(TYPE, ENUM_TYPE)                                                                                      \
-    inline FORGE_CONSTEXPR ENUM_TYPE operator|(ENUM_TYPE a, ENUM_TYPE b) { return ENUM_TYPE(((TYPE)a) | ((TYPE)b)); }        \
-    inline ENUM_TYPE&                operator|=(ENUM_TYPE& a, ENUM_TYPE b) { return (ENUM_TYPE&)(((TYPE&)a) |= ((TYPE)b)); } \
-    inline FORGE_CONSTEXPR ENUM_TYPE operator&(ENUM_TYPE a, ENUM_TYPE b) { return ENUM_TYPE(((TYPE)a) & ((TYPE)b)); }        \
-    inline ENUM_TYPE&                operator&=(ENUM_TYPE& a, ENUM_TYPE b) { return (ENUM_TYPE&)(((TYPE&)a) &= ((TYPE)b)); } \
-    inline FORGE_CONSTEXPR ENUM_TYPE operator~(ENUM_TYPE a) { return ENUM_TYPE(~((TYPE)a)); }                                \
-    inline FORGE_CONSTEXPR ENUM_TYPE operator^(ENUM_TYPE a, ENUM_TYPE b) { return ENUM_TYPE(((TYPE)a) ^ ((TYPE)b)); }        \
-    inline ENUM_TYPE&                operator^=(ENUM_TYPE& a, ENUM_TYPE b) { return (ENUM_TYPE&)(((TYPE&)a) ^= ((TYPE)b)); }
-#endif
-#else
-#define MAKE_ENUM_FLAG(TYPE, ENUM_TYPE)
-#endif
 
 //
 // default capability levels of the renderer
@@ -72,7 +53,6 @@ enum
     MAX_SEMANTIC_NAME_LENGTH = 128,
     MAX_DEBUG_NAME_LENGTH = 128,
     MAX_MIP_LEVELS = 0xFFFFFFFF,
-    MAX_SWAPCHAIN_IMAGES = 3,
     MAX_GPU_VENDOR_STRING_LENGTH = 256, // max size for GPUVendorPreset strings
     MAX_SAMPLE_LOCATIONS = 16,
 #if defined(VULKAN)
@@ -103,9 +83,6 @@ typedef int32_t DxDescriptorID;
 
 typedef enum RendererApi
 {
-#if defined(GLES)
-    RENDERER_API_GLES,
-#endif
 #if defined(DIRECT3D12)
     RENDERER_API_D3D12,
 #endif
@@ -221,18 +198,16 @@ typedef enum ResourceMemoryUsage
     RESOURCE_MEMORY_USAGE_MAX_ENUM = 0x7FFFFFFF
 } ResourceMemoryUsage;
 
-typedef struct PlatformParameters
+typedef struct GPUSelection
 {
-    // RendererAPI
-    RendererApi mSelectedRendererApi;
     // Available GPU capabilities
-    char        ppAvailableGpuNames[MAX_MULTIPLE_GPUS][MAX_GPU_VENDOR_STRING_LENGTH];
-    uint32_t    pAvailableGpuIds[MAX_MULTIPLE_GPUS];
-    uint32_t    mAvailableGpuCount;
-    uint32_t    mSelectedGpuIndex;
+    char     ppAvailableGpuNames[MAX_MULTIPLE_GPUS][MAX_GPU_VENDOR_STRING_LENGTH];
+    uint32_t pAvailableGpuIds[MAX_MULTIPLE_GPUS];
+    uint32_t mAvailableGpuCount;
+    uint32_t mSelectedGpuIndex;
     // Could add swap chain size, render target format, ...
-    uint32_t    mPreferedGpuId;
-} PlatformParameters;
+    uint32_t mPreferedGpuId;
+} GPUSelection;
 
 // Forward declarations
 typedef struct RendererContext    RendererContext;
@@ -285,16 +260,9 @@ typedef struct IndirectDispatchArguments
 
 typedef enum IndirectArgumentType
 {
-    INDIRECT_ARG_INVALID,
     INDIRECT_DRAW,
     INDIRECT_DRAW_INDEX,
     INDIRECT_DISPATCH,
-    INDIRECT_VERTEX_BUFFER,
-    INDIRECT_INDEX_BUFFER,
-    INDIRECT_CONSTANT,
-    INDIRECT_CONSTANT_BUFFER_VIEW,   // only for dx
-    INDIRECT_SHADER_RESOURCE_VIEW,   // only for dx
-    INDIRECT_UNORDERED_ACCESS_VIEW,  // only for dx
     INDIRECT_COMMAND_BUFFER,         // metal ICB
     INDIRECT_COMMAND_BUFFER_RESET,   // metal ICB reset
     INDIRECT_COMMAND_BUFFER_OPTIMIZE // metal ICB optimization
@@ -352,54 +320,30 @@ typedef enum SampleCount
     SAMPLE_COUNT_8 = 8,
     SAMPLE_COUNT_16 = 16,
     SAMPLE_COUNT_COUNT = 5,
+    SAMPLE_COUNT_ALL_BITS = ((uint32_t)SAMPLE_COUNT_1 | (uint32_t)SAMPLE_COUNT_2 | (uint32_t)SAMPLE_COUNT_4 | (uint32_t)SAMPLE_COUNT_8 |
+                             (uint32_t)SAMPLE_COUNT_16),
 } SampleCount;
 
-#ifdef METAL
 typedef enum ShaderStage
 {
     SHADER_STAGE_NONE = 0,
-    SHADER_STAGE_VERT = 0X00000001,
-    SHADER_STAGE_FRAG = 0X00000002,
-    SHADER_STAGE_COMP = 0X00000004,
-    SHADER_STAGE_ALL_GRAPHICS = ((uint32_t)SHADER_STAGE_VERT | (uint32_t)SHADER_STAGE_FRAG),
-    SHADER_STAGE_COUNT = 3,
-} ShaderStage;
-
-typedef enum ShaderStageIndex
-{
-    SHADER_STAGE_INDEX_VERT = 0,
-    SHADER_STAGE_INDEX_FRAG,
-    SHADER_STAGE_INDEX_COMP,
-} ShaderStageIndex;
-#else
-typedef enum ShaderStage
-{
-    SHADER_STAGE_NONE = 0,
-    SHADER_STAGE_VERT = 0X00000001,
-    SHADER_STAGE_TESC = 0X00000002,
-    SHADER_STAGE_TESE = 0X00000004,
-    SHADER_STAGE_GEOM = 0X00000008,
-    SHADER_STAGE_FRAG = 0X00000010,
-    SHADER_STAGE_COMP = 0X00000020,
+    SHADER_STAGE_VERT = 0x1,
+    SHADER_STAGE_FRAG = 0x2,
+    SHADER_STAGE_COMP = 0x4,
+    SHADER_STAGE_GEOM = 0x8,
+    SHADER_STAGE_TESC = 0x10,
+    SHADER_STAGE_TESE = 0x20,
     SHADER_STAGE_ALL_GRAPHICS = ((uint32_t)SHADER_STAGE_VERT | (uint32_t)SHADER_STAGE_TESC | (uint32_t)SHADER_STAGE_TESE |
                                  (uint32_t)SHADER_STAGE_GEOM | (uint32_t)SHADER_STAGE_FRAG),
     SHADER_STAGE_HULL = SHADER_STAGE_TESC,
     SHADER_STAGE_DOMN = SHADER_STAGE_TESE,
+#if defined(ENABLE_WORKGRAPH)
+    SHADER_STAGE_WORKGRAPH = 0x40,
+    SHADER_STAGE_COUNT = 7,
+#else
     SHADER_STAGE_COUNT = 6,
-} ShaderStage;
-
-typedef enum ShaderStageIndex
-{
-    SHADER_STAGE_INDEX_VERT = 0,
-    SHADER_STAGE_INDEX_TESC,
-    SHADER_STAGE_INDEX_TESE,
-    SHADER_STAGE_INDEX_GEOM,
-    SHADER_STAGE_INDEX_FRAG,
-    SHADER_STAGE_INDEX_COMP,
-    SHADER_STAGE_INDEX_HULL = SHADER_STAGE_INDEX_TESC,
-    SHADER_STAGE_INDEX_DOMN = SHADER_STAGE_INDEX_TESE,
-} ShaderStageIndex;
 #endif
+} ShaderStage;
 MAKE_ENUM_FLAG(uint32_t, ShaderStage)
 
 // This include is placed here because it uses data types defined previously in this file
@@ -556,6 +500,9 @@ typedef enum PipelineType
     PIPELINE_TYPE_UNDEFINED = 0,
     PIPELINE_TYPE_COMPUTE,
     PIPELINE_TYPE_GRAPHICS,
+#if defined(ENABLE_WORKGRAPH)
+    PIPELINE_TYPE_WORKGRAPH,
+#endif
     PIPELINE_TYPE_COUNT,
 } PipelineType;
 
@@ -661,6 +608,7 @@ typedef enum TextureCreationFlags
     /// Creates resolve attachment for auto resolve (MSAA on tiled architecture - Resolve can be done on tile through render pass)
     TEXTURE_CREATION_FLAG_CREATE_RESOLVE_ATTACHMENT = 0x10000,
 #endif
+    TEXTURE_CREATION_FLAG_SAMPLE_LOCATIONS_COMPATIBLE = 0x20000
 } TextureCreationFlags;
 MAKE_ENUM_FLAG(uint32_t, TextureCreationFlags)
 
@@ -789,13 +737,6 @@ typedef struct QueryPool
             ID3D11Query** ppQueries;
             D3D11_QUERY   mType;
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            uint32_t* pQueries;
-            uint32_t  mType;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         struct
@@ -1078,14 +1019,6 @@ typedef struct DEFINE_ALIGNED(Buffer, 64)
             uint64_t                   mPadA;
         } mDx11;
 #endif
-#if defined(GLES)
-        struct
-        {
-            GLuint mBuffer;
-            GLenum mTarget;
-            void*  pGLCpuMappedAddress;
-        } mGLES;
-#endif
 #if defined(ORBIS)
         OrbisBuffer mStruct;
 #endif
@@ -1210,17 +1143,6 @@ typedef struct DEFINE_ALIGNED(Texture, 64)
             uint64_t                    mPadB;
         } mDx11;
 #endif
-#if defined(GLES)
-        struct
-        {
-            GLuint mTexture;
-            GLenum mTarget;
-            GLenum mGlFormat;
-            GLenum mInternalFormat;
-            GLenum mType;
-            bool   mStateModified;
-        } mGLES;
-#endif
 #if defined(ORBIS)
         OrbisTexture mStruct;
         /// Contains resource allocation info such as parent heap, offset in heap
@@ -1328,15 +1250,6 @@ typedef struct DEFINE_ALIGNED(RenderTarget, 64)
                 ID3D11DepthStencilView** pDsvSliceDescriptors;
             };
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            GLuint mType;
-            GLuint mFramebuffer;
-            GLuint mDepthTarget;
-            GLuint mStencilTarget;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         struct
@@ -1446,17 +1359,6 @@ typedef struct DEFINE_ALIGNED(Sampler, 16)
             ID3D11SamplerState* pSamplerState;
         } mDx11;
 #endif
-#if defined(GLES)
-        struct
-        {
-            GLenum mMinFilter;
-            GLenum mMagFilter;
-            GLenum mMipMapMode;
-            GLenum mAddressS;
-            GLenum mAddressT;
-            GLenum mCompareFunc;
-        } mGLES;
-#endif
 #if defined(ORBIS)
         OrbisSampler mStruct;
 #endif
@@ -1471,8 +1373,6 @@ typedef struct DEFINE_ALIGNED(Sampler, 16)
 COMPILE_ASSERT(sizeof(Sampler) == 8 * sizeof(uint64_t));
 #elif defined(VULKAN)
 COMPILE_ASSERT(sizeof(Sampler) <= 8 * sizeof(uint64_t));
-#elif defined(GLES)
-COMPILE_ASSERT(sizeof(Sampler) == 4 * sizeof(uint64_t));
 #else
 COMPILE_ASSERT(sizeof(Sampler) == 2 * sizeof(uint64_t));
 #endif
@@ -1538,17 +1438,6 @@ typedef struct DEFINE_ALIGNED(DescriptorInfo, 16)
             uint32_t mReg : 20;
             uint32_t mPadA;
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            union
-            {
-                uint32_t mGlType;
-                uint32_t mUBOSize;
-                uint32_t mVariableStart;
-            };
-        } mGLES;
 #endif
 #if defined(USE_MULTIPLE_RENDER_APIS)
     };
@@ -1645,17 +1534,6 @@ typedef struct DEFINE_ALIGNED(RootSignature, 64)
             uint8_t              mDynamicCbvCount[DESCRIPTOR_UPDATE_FREQ_COUNT];
 
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            uint32_t           mProgramCount : 6;
-            uint32_t           mVariableCount : 10;
-            uint32_t*          pProgramTargets;
-            int32_t*           pDescriptorGlLocations;
-            struct GlVariable* pVariables;
-            Sampler*           pSampler;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         OrbisRootSignature mStruct;
@@ -1807,15 +1685,6 @@ typedef struct DEFINE_ALIGNED(DescriptorSet, 64)
             uint32_t                    mUpdateFrequency : 3;
         } mDx11;
 #endif
-#if defined(GLES)
-        struct
-        {
-            struct DescriptorDataArray* pHandles;
-            uint8_t                     mUpdateFrequency;
-            const RootSignature*        pRootSignature;
-            uint16_t                    mMaxSets;
-        } mGLES;
-#endif
 #if defined(ORBIS)
         OrbisDescriptorSet mStruct;
 #endif
@@ -1845,9 +1714,6 @@ typedef struct CmdPool
 #if defined(VULKAN)
         VkCommandPool pCmdPool;
 #endif
-#if defined(GLES)
-        struct CmdCache* pCmdCache;
-#endif
 #if defined(USE_MULTIPLE_RENDER_APIS)
     };
 #endif
@@ -1862,9 +1728,9 @@ typedef struct CmdDesc
     uint32_t mMaxSize;
 #endif
     bool mSecondary;
-#ifdef ENABLE_GRAPHICS_DEBUG
+#ifdef ENABLE_GRAPHICS_DEBUG_ANNOTATION
     const char* pName;
-#endif // ENABLE_GRAPHICS_DEBUG
+#endif // ENABLE_GRAPHICS_DEBUG_ANNOTATION
 } CmdDesc;
 
 typedef enum MarkerFlags
@@ -1908,7 +1774,7 @@ typedef struct DEFINE_ALIGNED(Cmd, 64)
             DmaCmd mDma;
 #endif
             ID3D12GraphicsCommandList1* pCmdList;
-#if defined(ENABLE_GRAPHICS_DEBUG) && defined(_WINDOWS)
+#if defined(ENABLE_GRAPHICS_VALIDATION) && defined(_WINDOWS)
             // For resource state validation
             ID3D12DebugCommandList* pDebugCmdList;
 #endif
@@ -1919,12 +1785,17 @@ typedef struct DEFINE_ALIGNED(Cmd, 64)
             // Command buffer state
             const RootSignature* pBoundRootSignature;
             DescriptorSet*       pBoundDescriptorSets[DESCRIPTOR_UPDATE_FREQ_COUNT];
-            uint16_t             mBoundDescriptorSetIndices[DESCRIPTOR_UPDATE_FREQ_COUNT];
-            uint32_t             mNodeIndex : 4;
-            uint32_t             mType : 3;
+#if defined(XBOX)
+            D3D12_SAMPLE_POSITION mSampleLocations[MAX_SAMPLE_LOCATIONS];
+#endif
+            uint16_t mBoundDescriptorSetIndices[DESCRIPTOR_UPDATE_FREQ_COUNT];
+            uint32_t mNodeIndex : 4;
+            uint32_t mType : 3;
 #if defined(XBOX)
             // Required for setting occlusion query control
             uint32_t mSampleCount : 5;
+            // Required for setting sample locations
+            uint32_t mNumPixel : 3;
 #endif
             CmdPool* pCmdPool;
         } mDx;
@@ -1935,10 +1806,16 @@ typedef struct DEFINE_ALIGNED(Cmd, 64)
             VkCommandBuffer  pCmdBuf;
             VkRenderPass     pActiveRenderPass;
             VkPipelineLayout pBoundPipelineLayout;
+            // VkSampleLocationEXT is 8 byte each. Choose to store SampleLocation instead.
+            SampleLocations  mSampleLocations[MAX_SAMPLE_LOCATIONS];
             CmdPool*         pCmdPool;
             uint32_t         mNodeIndex : 4;
             uint32_t         mType : 3;
             uint32_t         mIsRendering : 1;
+            // Required for vkSetSampleLocations
+            uint32_t         mGridSizeX : 2;
+            uint32_t         mGridSizeY : 2;
+            uint32_t         mSampleCount : 5;
         } mVk;
 #endif
 #if defined(METAL)
@@ -1968,11 +1845,8 @@ typedef struct DEFINE_ALIGNED(Cmd, 64)
             // Stored in cmdBindPipeline and used in all draw functions (primitive type does not go in PSO but specified in the draw call)
             uint32_t             mSelectedPrimitiveType : 4;
             uint32_t             mPipelineType : 3;
-            // To store sample locations provided by cmdSetSampleLocations and used in cmdBindRenderTargets
-            uint32_t             mSampleLocationsCount : 5;
             uint32_t             mShouldRebindDescriptorSets: DESCRIPTOR_UPDATE_FREQ_COUNT;
             uint32_t             mShouldRebindPipeline : 1;
-            MTLSamplePosition    mSamplePositions[MAX_SAMPLE_LOCATIONS];
             const RootSignature* pUsedRootSignature;
             DescriptorSet*       mBoundDescriptorSets[DESCRIPTOR_UPDATE_FREQ_COUNT];
             uint32_t             mBoundDescriptorSetIndices[DESCRIPTOR_UPDATE_FREQ_COUNT];
@@ -1984,7 +1858,7 @@ typedef struct DEFINE_ALIGNED(Cmd, 64)
             uint32_t mStrides[MAX_VERTEX_BINDINGS];
             uint32_t mFirstVertex;
 #endif
-#ifdef ENABLE_GRAPHICS_DEBUG
+#ifdef ENABLE_GRAPHICS_DEBUG_ANNOTATION
             char mDebugMarker[MAX_DEBUG_NAME_LENGTH];
 #endif
         };
@@ -1994,12 +1868,6 @@ typedef struct DEFINE_ALIGNED(Cmd, 64)
         {
             ID3D11Buffer* pRootConstantBuffer;
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            CmdPool* pCmdPool;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         OrbisCmd mStruct;
@@ -2055,12 +1923,6 @@ typedef struct Fence
             ID3D11Query* pDX11Query;
             uint32_t     mSubmitted : 1;
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            uint32_t mSubmitted : 1;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         OrbisFence mStruct;
@@ -2118,12 +1980,6 @@ typedef struct Semaphore
             uint64_t     mSignaled : 1;
         };
 #endif
-#if defined(GLES)
-        struct
-        {
-            uint32_t mSignaled : 1;
-        } mGLES;
-#endif
 #if defined(ORBIS)
         OrbisSemaphore mStruct;
 #endif
@@ -2173,12 +2029,6 @@ typedef struct Queue
             uint32_t  mGpuMode : 3;
         } mVk;
 #endif
-#if defined(GLES)
-        struct
-        {
-            struct CmdCache* pCmdCache;
-        } mGLES;
-#endif
 #if defined(METAL)
         struct
         {
@@ -2223,15 +2073,12 @@ typedef struct BinaryShaderStageDesc
     ProsperoBinaryShaderStageDesc mStruct;
 #else
     /// Byte code array
-    void*       pByteCode;
-    uint32_t    mByteCodeSize;
+    void* pByteCode;
+    uint32_t mByteCodeSize;
     const char* pEntryPoint;
 #if defined(METAL)
-    uint32_t    mNumThreadsPerGroup[3];
-    uint32_t    mOutputRenderTargetTypesMask;
-#endif
-#if defined(GLES)
-    GLuint      mShader;
+    uint32_t mNumThreadsPerGroup[3];
+    uint32_t mOutputRenderTargetTypesMask;
 #endif
 #endif
 } BinaryShaderStageDesc;
@@ -2306,12 +2153,6 @@ typedef struct Shader
             };
             ID3DBlob* pInputSignature;
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            GLuint mProgram;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         OrbisShader mStruct;
@@ -2442,12 +2283,24 @@ typedef struct ComputePipelineDesc
     RootSignature* pRootSignature;
 } ComputePipelineDesc;
 
+#if defined(ENABLE_WORKGRAPH)
+typedef struct WorkgraphPipelineDesc
+{
+    Shader*        pShaderProgram;
+    RootSignature* pRootSignature;
+    const char*    pWorkgraphName;
+} WorkgraphPipelineDesc;
+#endif
+
 typedef struct PipelineDesc
 {
     union
     {
         ComputePipelineDesc  mComputeDesc;
         GraphicsPipelineDesc mGraphicsDesc;
+#if defined(ENABLE_WORKGRAPH)
+        WorkgraphPipelineDesc mWorkgraphDesc;
+#endif
     };
     PipelineCache* pCache;
     void*          pPipelineExtensions;
@@ -2465,7 +2318,17 @@ typedef struct DEFINE_ALIGNED(Pipeline, 64)
 #if defined(DIRECT3D12)
         struct
         {
-            ID3D12PipelineState*   pPipelineState;
+            union
+            {
+                ID3D12PipelineState* pPipelineState;
+#if defined(ENABLE_WORKGRAPH)
+                struct
+                {
+                    ID3D12StateObject* pStateObject;
+                    WCHAR*             pWorkgraphName;
+                };
+#endif
+            };
             const RootSignature*   pRootSignature;
             PipelineType           mType;
             D3D_PRIMITIVE_TOPOLOGY mPrimitiveTopology;
@@ -2528,23 +2391,6 @@ typedef struct DEFINE_ALIGNED(Pipeline, 64)
             PipelineType             mType;
             D3D_PRIMITIVE_TOPOLOGY   mPrimitiveTopology;
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            uint16_t                    mVertexLayoutSize;
-            uint16_t                    mRootSignatureIndex;
-            uint16_t                    mVAOStateCount;
-            uint16_t                    mVAOStateLoop;
-            struct GLVAOState*          pVAOState;
-            struct GlVertexAttrib*      pVertexLayout;
-            struct GLRasterizerState*   pRasterizerState;
-            struct GLDepthStencilState* pDepthStencilState;
-            struct GLBlendState*        pBlendState;
-            RootSignature*              pRootSignature;
-            uint32_t                    mType;
-            GLenum                      mGlPrimitiveTopology;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         OrbisPipeline mStruct;
@@ -2642,8 +2488,56 @@ typedef struct ShaderStats
 
 typedef struct PipelineStats
 {
-    ShaderStats mStats[SHADER_STAGE_COUNT];
+    ShaderStats mVert;
+    ShaderStats mHull;
+    ShaderStats mDomain;
+    ShaderStats mGeom;
+    ShaderStats mFrag;
+    ShaderStats mComp;
 } PipelineStats;
+#endif
+
+#if defined(ENABLE_WORKGRAPH)
+typedef struct WorkgraphDesc
+{
+    Pipeline* pPipeline;
+} WorkgraphDesc;
+
+typedef struct Workgraph
+{
+    Buffer*   pBackingBuffer;
+    Pipeline* pPipeline;
+#if defined(DIRECT3D12)
+    D3D12_PROGRAM_IDENTIFIER mId;
+#endif
+} Workgraph;
+
+typedef enum DispatchGraphInputType
+{
+    DISPATCH_GRAPH_INPUT_CPU = 0,
+    DISPATCH_GRAPH_INPUT_GPU,
+    DISPATCH_GRAPH_INPUT_COUNT,
+} DispatchGraphInputType;
+
+typedef struct DispatchGraphDesc
+{
+    Workgraph* pWorkgraph;
+    union
+    {
+        struct
+        {
+            void*    pInput;
+            uint32_t mInputStride;
+        };
+        struct
+        {
+            Buffer*  pInputBuffer;
+            uint32_t mInputBufferOffset;
+        };
+    };
+    DispatchGraphInputType mInputType;
+    bool                   mInitialize;
+} DispatchGraphDesc;
 #endif
 
 typedef enum SwapChainCreationFlags
@@ -2747,12 +2641,6 @@ typedef struct SwapChain
             DXGI_SWAP_EFFECT mSwapEffect;
         } mDx11;
 #endif
-#if defined(GLES)
-        struct
-        {
-            GLSurface pSurface;
-        } mGLES;
-#endif
 #if defined(ORBIS)
         OrbisSwapChain mStruct;
 #endif
@@ -2829,16 +2717,7 @@ typedef struct RendererDesc
         {
             /// Set whether to force feature level 10 for compatibility
             bool mUseDx10;
-            /// Set whether to pick the first valid GPU or use our GpuConfig
-            bool mUseDefaultGpu;
         } mDx11;
-#endif
-#if defined(GLES)
-        struct
-        {
-            const char** ppDeviceExtensions;
-            uint32_t     mDeviceExtensionCount;
-        } mGLES;
 #endif
 #if defined(ORBIS)
         OrbisExtendedDesc mExt;
@@ -2868,11 +2747,10 @@ typedef struct RendererDesc
     bool mEnableShaderStats;
 #endif
 
-    bool mD3D11Supported;
-    bool mGLESSupported;
-#if defined(VULKAN) && defined(ANDROID)
-    bool mPreferVulkan;
-#endif
+    // to align on PC on 40 bytes
+    bool mPaddingA;
+    bool mPaddingB;
+    bool mPaddingC;
 } RendererDesc;
 
 typedef struct GPUVendorPreset
@@ -2888,6 +2766,7 @@ typedef struct GPUVendorPreset
     uint32_t       mRTCoresCount;
 } GPUVendorPreset;
 
+// if you made change to this structure, please update GraphicsConfig.cpp FORMAT_CAPABILITY_COUNT
 typedef enum FormatCapability
 {
     FORMAT_CAP_NONE = 0,
@@ -2898,16 +2777,6 @@ typedef enum FormatCapability
     FORMAT_CAP_RENDER_TARGET = 0x10,
 } FormatCapability;
 MAKE_ENUM_FLAG(uint32_t, FormatCapability);
-
-typedef struct GPUCapBits
-{
-    FormatCapability mFormatCaps[TinyImageFormat_Count];
-} GPUCapBits;
-
-typedef enum DefaultResourceAlignment
-{
-    RESOURCE_BUFFER_ALIGNMENT = 4U,
-} DefaultResourceAlignment;
 
 typedef enum WaveOpsSupportFlags
 {
@@ -2925,11 +2794,56 @@ typedef enum WaveOpsSupportFlags
 } WaveOpsSupportFlags;
 MAKE_ENUM_FLAG(uint32_t, WaveOpsSupportFlags);
 
-// update availableGpuProperties in GraphicsConfig.cpp if you made changes to this list
-typedef struct GPUSettings
+typedef struct GpuDesc
 {
-    uint64_t mVRAM; // set to 0 on OpenGLES platform
+#if defined(USE_MULTIPLE_RENDER_APIS)
+    union
+    {
+#endif
+#if defined(DIRECT3D12)
+        struct
+        {
+#if defined(XBOX)
+            IDXGIAdapter* pGpu;
+            ID3D12Device* pDevice;
+#elif defined(DIRECT3D12)
+            IDXGIAdapter4*                           pGpu;
+#endif
+        } mDx;
+#endif
+#if defined(VULKAN)
+        struct
+        {
+            VkPhysicalDevice            pGpu;
+            VkPhysicalDeviceProperties2 mGpuProperties;
+        } mVk;
+#endif
+#if defined(DIRECT3D11)
+        struct
+        {
+            IDXGIAdapter1* pGpu;
+            uint32_t       mPartialUpdateConstantBufferSupported : 1;
+        } mDx11;
+#endif
+#if defined(USE_MULTIPLE_RENDER_APIS)
+    };
+#endif
+#if defined(METAL)
+    id<MTLDevice>     pGPU;
+    id<MTLCounterSet> pCounterSetTimestamp;
+    uint32_t          mCounterTimestampEnabled : 1;
+#endif
+
+    FormatCapability mFormatCaps[TinyImageFormat_Count];
+
+    /*************************************************************************************/
+    // GPU Properties
+    /*************************************************************************************/
+    // update availableGpuProperties, setDefaultGPUProperties in GraphicsConfig.cpp
+    // if you made changes to this list
+    uint64_t mVRAM;
     uint32_t mUniformBufferAlignment;
+    uint32_t mUploadBufferAlignment;
     uint32_t mUploadBufferTextureAlignment;
     uint32_t mUploadBufferTextureRowAlignment;
     uint32_t mMaxVertexInputBindings;
@@ -2944,6 +2858,8 @@ typedef struct GPUSettings
     uint32_t mMaxTotalComputeThreads;
     uint32_t mMaxComputeThreads[3];
     uint32_t mMultiDrawIndirect : 1;
+    uint32_t mMultiDrawIndirectCount : 1;
+    uint32_t mRootConstant : 1;
     uint32_t mIndirectRootConstant : 1;
     uint32_t mBuiltinDrawID : 1;
     uint32_t mIndirectCommandBuffer : 1;
@@ -2957,17 +2873,60 @@ typedef struct GPUSettings
     uint32_t mPipelineStatsQueries : 1;
     uint32_t mAllowBufferTextureInSameHeap : 1;
     uint32_t mRaytracingSupported : 1;
+    uint32_t mUnifiedMemorySupported : 1;
     uint32_t mRayPipelineSupported : 1;
     uint32_t mRayQuerySupported : 1;
+    uint32_t mWorkgraphSupported : 1;
     uint32_t mSoftwareVRSSupported : 1;
     uint32_t mPrimitiveIdSupported : 1;
+    uint32_t mPrimitiveIdPsSupported : 1;
     uint32_t m64BitAtomicsSupported : 1;
 #if defined(DIRECT3D11) || defined(DIRECT3D12)
     D3D_FEATURE_LEVEL mFeatureLevel;
+    uint32_t          mSuppressInvalidSubresourceStateAfterExit : 1;
 #endif
 #if defined(VULKAN)
     uint32_t mDynamicRenderingSupported : 1;
     uint32_t mXclipseTransferQueueWorkaround : 1;
+    uint32_t mYCbCrExtension : 1;
+    uint32_t mFillModeNonSolid : 1;
+    uint32_t mKHRRayQueryExtension : 1;
+    uint32_t mAMDGCNShaderExtension : 1;
+    uint32_t mAMDDrawIndirectCountExtension : 1;
+    uint32_t mAMDShaderInfoExtension : 1;
+    uint32_t mDescriptorIndexingExtension : 1;
+    uint32_t mDynamicRenderingExtension : 1;
+    uint32_t mShaderSampledImageArrayDynamicIndexingSupported : 1;
+    uint32_t mBufferDeviceAddressSupported : 1;
+    uint32_t mDrawIndirectCountExtension : 1;
+    uint32_t mDedicatedAllocationExtension : 1;
+    uint32_t mDebugMarkerExtension : 1;
+    uint32_t mMemoryReq2Extension : 1;
+    uint32_t mFragmentShaderInterlockExtension : 1;
+    uint32_t mBufferDeviceAddressExtension : 1;
+    uint32_t mAccelerationStructureExtension : 1;
+    uint32_t mRayTracingPipelineExtension : 1;
+    uint32_t mRayQueryExtension : 1;
+    uint32_t mShaderAtomicInt64Extension : 1;
+    uint32_t mBufferDeviceAddressFeature : 1;
+    uint32_t mShaderFloatControlsExtension : 1;
+    uint32_t mSpirv14Extension : 1;
+    uint32_t mDeferredHostOperationsExtension : 1;
+    uint32_t mDeviceFaultExtension : 1;
+    uint32_t mDeviceFaultSupported : 1;
+    uint32_t mASTCDecodeModeExtension : 1;
+    uint32_t mDeviceMemoryReportExtension : 1;
+    uint32_t mAMDBufferMarkerExtension : 1;
+    uint32_t mAMDDeviceCoherentMemoryExtension : 1;
+    uint32_t mAMDDeviceCoherentMemorySupported : 1;
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    uint32_t mExternalMemoryExtension : 1;
+    uint32_t mExternalMemoryWin32Extension : 1;
+#endif
+#if defined(QUEST_VR)
+    uint32_t mMultiviewExtension : 1;
+#endif
+
 #endif
     uint32_t mMaxBoundTextures;
     uint32_t mSamplerAnisotropySupported : 1;
@@ -2983,7 +2942,8 @@ typedef struct GPUSettings
 #endif
 #endif
     uint32_t mAmdAsicFamily;
-} GPUSettings;
+    uint32_t mFrameBufferSamplesCount;
+} GpuDesc;
 
 typedef struct DEFINE_ALIGNED(Renderer, 64)
 {
@@ -3005,9 +2965,11 @@ typedef struct DEFINE_ALIGNED(Renderer, 64)
 #elif defined(DIRECT3D12)
             ID3D12Device*                            pDevice;
 #endif
-#if defined(_WINDOWS) && defined(FORGE_DEBUG)
-            ID3D12InfoQueue* pDebugValidation;
-            bool             mSuppressMismatchingCommandListDuringPresent;
+#if defined(_WINDOWS) && defined(ENABLE_GRAPHICS_VALIDATION)
+            ID3D12InfoQueue1* pDebugValidation;
+            DWORD             mCallbackCookie;
+            bool              mUseDebugCallback;
+            bool              mSuppressMismatchingCommandListDuringPresent;
 #endif
         } mDx;
 #endif
@@ -3058,24 +3020,13 @@ typedef struct DEFINE_ALIGNED(Renderer, 64)
             ID3DUserDefinedAnnotation* pUserDefinedAnnotation;
         } mDx11;
 #endif
-#if defined(GLES)
-        struct
-        {
-            GLContext pContext;
-            GLConfig  pConfig;
-        } mGLES;
-#endif
 #if defined(USE_MULTIPLE_RENDER_APIS)
     };
 #endif
 
-#if defined(ENABLE_NSIGHT_AFTERMATH)
-    // GPU crash dump tracker using Nsight Aftermath instrumentation
-    AftermathTracker mAftermathTracker;
-#endif
     struct NullDescriptors* pNullDescriptors;
     struct RendererContext* pContext;
-    const struct GpuInfo*   pGpu;
+    const struct GpuDesc*   pGpu;
     const char*             pName;
     RendererApi             mRendererApi;
     uint32_t                mLinkedNodeCount : 4;
@@ -3083,6 +3034,7 @@ typedef struct DEFINE_ALIGNED(Renderer, 64)
     uint32_t                mGpuMode : 3;
     uint32_t                mShaderTarget : 4;
     uint32_t                mOwnsContext : 1;
+
 } Renderer;
 // 3 cache lines
 COMPILE_ASSERT(sizeof(Renderer) <= 24 * sizeof(uint64_t));
@@ -3118,8 +3070,6 @@ typedef struct RendererContextDesc
         {
             /// Set whether to force feature level 10 for compatibility
             bool mUseDx10;
-            /// Set whether to pick the first valid GPU or use our GpuConfig
-            bool mUseDefaultGpu;
         } mDx11;
 #endif
 #if defined(USE_MULTIPLE_RENDER_APIS)
@@ -3129,98 +3079,7 @@ typedef struct RendererContextDesc
 #if defined(SHADER_STATS_AVAILABLE)
     bool mEnableShaderStats;
 #endif
-    bool mD3D11Supported;
-    bool mGLESSupported;
-#if defined(VULKAN) && defined(ANDROID)
-    bool mPreferVulkan;
-#endif
 } RendererContextDesc;
-
-typedef struct GpuInfo
-{
-#if defined(USE_MULTIPLE_RENDER_APIS)
-    union
-    {
-#endif
-#if defined(DIRECT3D12)
-        struct
-        {
-#if defined(XBOX)
-            IDXGIAdapter* pGpu;
-            ID3D12Device* pDevice;
-#elif defined(DIRECT3D12)
-            IDXGIAdapter4*                           pGpu;
-#endif
-        } mDx;
-#endif
-#if defined(VULKAN)
-        struct
-        {
-            VkPhysicalDevice            pGpu;
-            VkPhysicalDeviceProperties2 mGpuProperties;
-            uint32_t                    mYCbCrExtension : 1;
-            uint32_t                    mFillModeNonSolid : 1;
-            uint32_t                    mKHRRayQueryExtension : 1;
-            uint32_t                    mAMDGCNShaderExtension : 1;
-            uint32_t                    mAMDDrawIndirectCountExtension : 1;
-            uint32_t                    mAMDShaderInfoExtension : 1;
-            uint32_t                    mDescriptorIndexingExtension : 1;
-            uint32_t                    mDynamicRenderingExtension : 1;
-            uint32_t                    mShaderSampledImageArrayDynamicIndexingSupported : 1;
-            uint32_t                    mBufferDeviceAddressSupported : 1;
-            uint32_t                    mDrawIndirectCountExtension : 1;
-            uint32_t                    mDedicatedAllocationExtension : 1;
-            uint32_t                    mDebugMarkerExtension : 1;
-            uint32_t                    mMemoryReq2Extension : 1;
-            uint32_t                    mFragmentShaderInterlockExtension : 1;
-            uint32_t                    mBufferDeviceAddressExtension : 1;
-            uint32_t                    mAccelerationStructureExtension : 1;
-            uint32_t                    mRayTracingPipelineExtension : 1;
-            uint32_t                    mRayQueryExtension : 1;
-            uint32_t                    mShaderAtomicInt64Extension : 1;
-            uint32_t                    mBufferDeviceAddressFeature : 1;
-            uint32_t                    mShaderFloatControlsExtension : 1;
-            uint32_t                    mSpirv14Extension : 1;
-            uint32_t                    mDeferredHostOperationsExtension : 1;
-            uint32_t                    mDeviceFaultExtension : 1;
-            uint32_t                    mDeviceFaultSupported : 1;
-            uint32_t                    mASTCDecodeModeExtension : 1;
-            uint32_t                    mDeviceMemoryReportExtension : 1;
-            uint32_t                    mAMDBufferMarkerExtension : 1;
-            uint32_t                    mAMDDeviceCoherentMemoryExtension : 1;
-            uint32_t                    mAMDDeviceCoherentMemorySupported : 1;
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-            uint32_t mExternalMemoryExtension : 1;
-            uint32_t mExternalMemoryWin32Extension : 1;
-#endif
-#if defined(QUEST_VR)
-            uint32_t mMultiviewExtension : 1;
-#endif
-#if defined(ENABLE_NSIGHT_AFTERMATH)
-            uint32_t mNVDeviceDiagnosticsCheckpointExtension : 1;
-            uint32_t mNVDeviceDiagnosticsConfigExtension : 1;
-            uint32_t mAftermathSupport : 1;
-#endif
-        } mVk;
-#endif
-#if defined(DIRECT3D11)
-        struct
-        {
-            IDXGIAdapter1* pGpu;
-            uint32_t       mPartialUpdateConstantBufferSupported : 1;
-        } mDx11;
-#endif
-#if defined(USE_MULTIPLE_RENDER_APIS)
-    };
-#endif
-#if defined(METAL)
-    id<MTLDevice>     pGPU;
-    id<MTLCounterSet> pCounterSetTimestamp;
-    uint32_t          mCounterTimestampEnabled : 1;
-#endif
-    GPUSettings mSettings;
-    GPUCapBits  mCapBits;
-} GpuInfo;
 
 typedef struct RendererContext
 {
@@ -3268,41 +3127,9 @@ typedef struct RendererContext
         uint32_t mExtendedEncoderDebugReport : 1;
     } mMtl;
 #endif
-    GpuInfo  mGpus[MAX_MULTIPLE_GPUS];
+    GpuDesc  mGpus[MAX_MULTIPLE_GPUS];
     uint32_t mGpuCount;
 } RendererContext;
-
-// Indirect command structure define
-typedef struct IndirectArgument
-{
-    IndirectArgumentType mType;
-    uint32_t             mOffset;
-} IndirectArgument;
-
-typedef struct IndirectArgumentDescriptor
-{
-    IndirectArgumentType mType;
-    uint32_t             mIndex;
-    uint32_t             mByteSize;
-} IndirectArgumentDescriptor;
-
-typedef struct CommandSignatureDesc
-{
-    RootSignature*              pRootSignature;
-    IndirectArgumentDescriptor* pArgDescs;
-    uint32_t                    mIndirectArgCount;
-    /// Set to true if indirect argument struct should not be aligned to 16 bytes
-    bool                        mPacked;
-} CommandSignatureDesc;
-
-typedef struct CommandSignature
-{
-#if defined(DIRECT3D12)
-    ID3D12CommandSignature* pHandle;
-#endif
-    IndirectArgumentType mDrawType;
-    uint32_t             mStride;
-} CommandSignature;
 
 typedef struct DescriptorSetDesc
 {
@@ -3363,31 +3190,25 @@ typedef struct BindDepthTargetDesc
     uint32_t        mUseMipSlice : 1;
 } BindDepthTargetDesc;
 
+// Uses render targets' sample count in bindRenderTargetsDesc
+typedef struct SampleLocationDesc
+{
+    SampleLocations* pLocations;
+    uint32_t         mGridSizeX;
+    uint32_t         mGridSizeY;
+} SampleLocationDesc;
+
 typedef struct BindRenderTargetsDesc
 {
     uint32_t             mRenderTargetCount;
     BindRenderTargetDesc mRenderTargets[MAX_RENDER_TARGET_ATTACHMENTS];
     BindDepthTargetDesc  mDepthStencil;
+    SampleLocationDesc   mSampleLocation;
     // Explicit viewport for empty render pass
     uint32_t             mExtent[2];
 } BindRenderTargetsDesc;
 
-#ifdef __INTELLISENSE__
-// IntelliSense is the code completion engine in Visual Studio. When it parses the source files, __INTELLISENSE__ macro is defined.
-// Here we trick IntelliSense into thinking that the renderer functions are not function pointers, but just regular functions.
-// What this achieves is filtering out duplicated function names from code completion results and improving the code completion for function
-// parameters. This dramatically improves the quality of life for Visual Studio users.
-#define DECLARE_RENDERER_FUNCTION(ret, name, ...) ret name(__VA_ARGS__);
-#else
-#define DECLARE_RENDERER_FUNCTION(ret, name, ...)       \
-    typedef ret(FORGE_CALLCONV* name##Fn)(__VA_ARGS__); \
-    FORGE_RENDERER_API extern name##Fn name;
-#endif
-
 // clang-format off
-// Utilities functions
-FORGE_RENDERER_API void setRendererInitializationError(const char* reason);
-FORGE_RENDERER_API bool hasRendererInitializationError(const char** outReason);
 
 // API functions
 
@@ -3400,140 +3221,142 @@ FORGE_RENDERER_API void FORGE_CALLCONV exitRendererContext(RendererContext* pCon
 FORGE_RENDERER_API void FORGE_CALLCONV initRenderer(const char* appName, const RendererDesc* pSettings, Renderer** ppRenderer);
 FORGE_RENDERER_API void FORGE_CALLCONV exitRenderer(Renderer* pRenderer);
 
-DECLARE_RENDERER_FUNCTION(void, addFence, Renderer* pRenderer, Fence** ppFence)
-DECLARE_RENDERER_FUNCTION(void, removeFence, Renderer* pRenderer, Fence* pFence)
+void initFence(Renderer* pRenderer, Fence** ppFence);
+void exitFence(Renderer* pRenderer, Fence* pFence);
 
-DECLARE_RENDERER_FUNCTION(void, addSemaphore, Renderer* pRenderer, Semaphore** ppSemaphore)
-DECLARE_RENDERER_FUNCTION(void, removeSemaphore, Renderer* pRenderer, Semaphore* pSemaphore)
+void initSemaphore(Renderer* pRenderer, Semaphore** ppSemaphore);
+void exitSemaphore(Renderer* pRenderer, Semaphore* pSemaphore);
 
-DECLARE_RENDERER_FUNCTION(void, addQueue, Renderer* pRenderer, QueueDesc* pQDesc, Queue** ppQueue)
-DECLARE_RENDERER_FUNCTION(void, removeQueue, Renderer* pRenderer, Queue* pQueue)
+void initQueue(Renderer* pRenderer, QueueDesc* pQDesc, Queue** ppQueue);
+void exitQueue(Renderer* pRenderer, Queue* pQueue);
 
-DECLARE_RENDERER_FUNCTION(void, addSwapChain, Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** ppSwapChain)
-DECLARE_RENDERER_FUNCTION(void, removeSwapChain, Renderer* pRenderer, SwapChain* pSwapChain)
+void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** ppSwapChain);
+void removeSwapChain(Renderer* pRenderer, SwapChain* pSwapChain);
 
 // memory functions
-DECLARE_RENDERER_FUNCTION(void, addResourceHeap, Renderer* pRenderer, const ResourceHeapDesc* pDesc, ResourceHeap** ppHeap)
-DECLARE_RENDERER_FUNCTION(void, removeResourceHeap, Renderer* pRenderer, ResourceHeap* pHeap)
+void addResourceHeap(Renderer* pRenderer, const ResourceHeapDesc* pDesc, ResourceHeap** ppHeap);
+void removeResourceHeap(Renderer* pRenderer, ResourceHeap* pHeap);
 
 // command pool functions
-DECLARE_RENDERER_FUNCTION(void, addCmdPool, Renderer* pRenderer, const CmdPoolDesc* pDesc, CmdPool** ppCmdPool)
-DECLARE_RENDERER_FUNCTION(void, removeCmdPool, Renderer* pRenderer, CmdPool* pCmdPool)
-DECLARE_RENDERER_FUNCTION(void, addCmd, Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd)
-DECLARE_RENDERER_FUNCTION(void, removeCmd, Renderer* pRenderer, Cmd* pCmd)
-DECLARE_RENDERER_FUNCTION(void, addCmd_n, Renderer* pRenderer, const CmdDesc* pDesc, uint32_t cmdCount, Cmd*** pppCmds)
-DECLARE_RENDERER_FUNCTION(void, removeCmd_n, Renderer* pRenderer, uint32_t cmdCount, Cmd** ppCmds)
+void initCmdPool(Renderer* pRenderer, const CmdPoolDesc* pDesc, CmdPool** ppCmdPool);
+void exitCmdPool(Renderer* pRenderer, CmdPool* pCmdPool);
+void initCmd(Renderer* pRenderer, const CmdDesc* pDesc, Cmd** ppCmd);
+void exitCmd(Renderer* pRenderer, Cmd* pCmd);
+void initCmd_n(Renderer* pRenderer, const CmdDesc* pDesc, uint32_t cmdCount, Cmd*** pppCmds);
+void exitCmd_n(Renderer* pRenderer, uint32_t cmdCount, Cmd** ppCmds);
 
 //
 // All buffer, texture loading handled by resource system -> IResourceLoader.*
 //
 
-DECLARE_RENDERER_FUNCTION(void, addRenderTarget, Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderTarget** ppRenderTarget)
-DECLARE_RENDERER_FUNCTION(void, removeRenderTarget, Renderer* pRenderer, RenderTarget* pRenderTarget)
-DECLARE_RENDERER_FUNCTION(void, addSampler, Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampler)
-DECLARE_RENDERER_FUNCTION(void, removeSampler, Renderer* pRenderer, Sampler* pSampler)
+void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderTarget** ppRenderTarget);
+void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget);
+void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampler);
+void removeSampler(Renderer* pRenderer, Sampler* pSampler);
 
 // shader functions
-DECLARE_RENDERER_FUNCTION(void, addShaderBinary, Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader** ppShaderProgram)
-DECLARE_RENDERER_FUNCTION(void, removeShader, Renderer* pRenderer, Shader* pShaderProgram)
+void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader** ppShaderProgram);
+void removeShader(Renderer* pRenderer, Shader* pShaderProgram);
 
-DECLARE_RENDERER_FUNCTION(void, addRootSignature, Renderer* pRenderer, const RootSignatureDesc* pDesc, RootSignature** ppRootSignature)
-DECLARE_RENDERER_FUNCTION(void, removeRootSignature, Renderer* pRenderer, RootSignature* pRootSignature)
-DECLARE_RENDERER_FUNCTION(uint32_t, getDescriptorIndexFromName, const RootSignature* pRootSignature, const char* pName)
+void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pDesc, RootSignature** ppRootSignature);
+void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature);
+uint32_t getDescriptorIndexFromName(const RootSignature* pRootSignature, const char* pName);
 
 // pipeline functions
-DECLARE_RENDERER_FUNCTION(void, addPipeline, Renderer* pRenderer, const PipelineDesc* pPipelineSettings, Pipeline** ppPipeline)
-DECLARE_RENDERER_FUNCTION(void, removePipeline, Renderer* pRenderer, Pipeline* pPipeline)
-DECLARE_RENDERER_FUNCTION(void, addPipelineCache, Renderer* pRenderer, const PipelineCacheDesc* pDesc, PipelineCache** ppPipelineCache)
-DECLARE_RENDERER_FUNCTION(void, getPipelineCacheData, Renderer* pRenderer, PipelineCache* pPipelineCache, size_t* pSize, void* pData)
+void addPipeline(Renderer* pRenderer, const PipelineDesc* pPipelineSettings, Pipeline** ppPipeline);
+void removePipeline(Renderer* pRenderer, Pipeline* pPipeline);
+void addPipelineCache(Renderer* pRenderer, const PipelineCacheDesc* pDesc, PipelineCache** ppPipelineCache);
+void getPipelineCacheData(Renderer* pRenderer, PipelineCache* pPipelineCache, size_t* pSize, void* pData);
 #if defined(SHADER_STATS_AVAILABLE)
-DECLARE_RENDERER_FUNCTION(void, addPipelineStats, Renderer* pRenderer, Pipeline* pPipeline, bool generateDisassembly, PipelineStats* pOutStats);
-DECLARE_RENDERER_FUNCTION(void, removePipelineStats, Renderer* pRenderer, PipelineStats* pStats);
+void addPipelineStats(Renderer* pRenderer, Pipeline* pPipeline, bool generateDisassembly, PipelineStats* pOutStats);
+void removePipelineStats(Renderer* pRenderer, PipelineStats* pStats);
 #endif
-DECLARE_RENDERER_FUNCTION(void, removePipelineCache, Renderer* pRenderer, PipelineCache* pPipelineCache)
+void removePipelineCache(Renderer* pRenderer, PipelineCache* pPipelineCache);
 
 // Descriptor Set functions
-DECLARE_RENDERER_FUNCTION(void, addDescriptorSet, Renderer* pRenderer, const DescriptorSetDesc* pDesc, DescriptorSet** ppDescriptorSet)
-DECLARE_RENDERER_FUNCTION(void, removeDescriptorSet, Renderer* pRenderer, DescriptorSet* pDescriptorSet)
-DECLARE_RENDERER_FUNCTION(void, updateDescriptorSet, Renderer* pRenderer, uint32_t index, DescriptorSet* pDescriptorSet, uint32_t count, const DescriptorData* pParams)
+void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, DescriptorSet** ppDescriptorSet);
+void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet);
+void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDescriptorSet, uint32_t count, const DescriptorData* pParams);
 
 // command buffer functions
-DECLARE_RENDERER_FUNCTION(void, resetCmdPool, Renderer* pRenderer, CmdPool* pCmdPool)
-DECLARE_RENDERER_FUNCTION(void, beginCmd, Cmd* pCmd)
-DECLARE_RENDERER_FUNCTION(void, endCmd, Cmd* pCmd)
-DECLARE_RENDERER_FUNCTION(void, cmdBindRenderTargets, Cmd* pCmd, const BindRenderTargetsDesc* pDesc)
-DECLARE_RENDERER_FUNCTION(void, cmdSetSampleLocations, Cmd* pCmd, SampleCount samplesCount, uint32_t gridSizeX, uint32_t gridSizeY, SampleLocations* plocations);
-DECLARE_RENDERER_FUNCTION(void, cmdSetViewport, Cmd* pCmd, float x, float y, float width, float height, float minDepth, float maxDepth)
-DECLARE_RENDERER_FUNCTION(void, cmdSetScissor, Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-DECLARE_RENDERER_FUNCTION(void, cmdSetStencilReferenceValue, Cmd* pCmd, uint32_t val)
-DECLARE_RENDERER_FUNCTION(void, cmdBindPipeline, Cmd* pCmd, Pipeline* pPipeline)
-DECLARE_RENDERER_FUNCTION(void, cmdBindDescriptorSet, Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet)
-DECLARE_RENDERER_FUNCTION(void, cmdBindPushConstants, Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants)
-DECLARE_RENDERER_FUNCTION(void, cmdBindDescriptorSetWithRootCbvs, Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet, uint32_t count, const DescriptorData* pParams)
-DECLARE_RENDERER_FUNCTION(void, cmdBindIndexBuffer, Cmd* pCmd, Buffer* pBuffer, uint32_t indexType, uint64_t offset)
-DECLARE_RENDERER_FUNCTION(void, cmdBindVertexBuffer, Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, const uint32_t* pStrides, const uint64_t* pOffsets)
-DECLARE_RENDERER_FUNCTION(void, cmdDraw, Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex)
-DECLARE_RENDERER_FUNCTION(void, cmdDrawInstanced, Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex, uint32_t instanceCount, uint32_t firstInstance)
-DECLARE_RENDERER_FUNCTION(void, cmdDrawIndexed, Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
-DECLARE_RENDERER_FUNCTION(void, cmdDrawIndexedInstanced, Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
-DECLARE_RENDERER_FUNCTION(void, cmdDispatch, Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void resetCmdPool(Renderer* pRenderer, CmdPool* pCmdPool);
+void beginCmd(Cmd* pCmd);
+void endCmd(Cmd* pCmd);
+void cmdBindRenderTargets(Cmd* pCmd, const BindRenderTargetsDesc* pDesc);
+void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, float minDepth, float maxDepth);
+void cmdSetScissor(Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+void cmdSetStencilReferenceValue(Cmd* pCmd, uint32_t val);
+void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline);
+void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet);
+void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants);
+void cmdBindDescriptorSetWithRootCbvs(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet, uint32_t count, const DescriptorData* pParams);
+void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint32_t indexType, uint64_t offset);
+void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, const uint32_t* pStrides, const uint64_t* pOffsets);
+void cmdDraw(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex);
+void cmdDrawInstanced(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex, uint32_t instanceCount, uint32_t firstInstance);
+void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex);
+void cmdDrawIndexedInstanced(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
 // Transition Commands
-DECLARE_RENDERER_FUNCTION(void, cmdResourceBarrier, Cmd* pCmd, uint32_t bufferBarrierCount, BufferBarrier* pBufferBarriers, uint32_t textureBarrierCount, TextureBarrier* pTextureBarriers, uint32_t rtBarrierCount, RenderTargetBarrier* pRtBarriers)
+void cmdResourceBarrier(Cmd* pCmd, uint32_t bufferBarrierCount, BufferBarrier* pBufferBarriers, uint32_t textureBarrierCount, TextureBarrier* pTextureBarriers, uint32_t rtBarrierCount, RenderTargetBarrier* pRtBarriers);
 
 // queue/fence/swapchain functions
-DECLARE_RENDERER_FUNCTION(void, acquireNextImage, Renderer* pRenderer, SwapChain* pSwapChain, Semaphore* pSignalSemaphore, Fence* pFence, uint32_t* pImageIndex)
-DECLARE_RENDERER_FUNCTION(void, queueSubmit, Queue* pQueue, const QueueSubmitDesc* pDesc)
-DECLARE_RENDERER_FUNCTION(void, queuePresent, Queue* pQueue, const QueuePresentDesc* pDesc)
-DECLARE_RENDERER_FUNCTION(void, waitQueueIdle, Queue* pQueue)
-DECLARE_RENDERER_FUNCTION(void, getFenceStatus, Renderer* pRenderer, Fence* pFence, FenceStatus* pFenceStatus)
-DECLARE_RENDERER_FUNCTION(void, waitForFences, Renderer* pRenderer, uint32_t fenceCount, Fence** ppFences)
-DECLARE_RENDERER_FUNCTION(void, toggleVSync, Renderer* pRenderer, SwapChain** ppSwapchain)
+void acquireNextImage(Renderer* pRenderer, SwapChain* pSwapChain, Semaphore* pSignalSemaphore, Fence* pFence, uint32_t* pImageIndex);
+void queueSubmit(Queue* pQueue, const QueueSubmitDesc* pDesc);
+void queuePresent(Queue* pQueue, const QueuePresentDesc* pDesc);
+void waitQueueIdle(Queue* pQueue);
+void getFenceStatus(Renderer* pRenderer, Fence* pFence, FenceStatus* pFenceStatus);
+void waitForFences(Renderer* pRenderer, uint32_t fenceCount, Fence** ppFences);
+void toggleVSync(Renderer* pRenderer, SwapChain** ppSwapchain);
 
 //Returns the recommended format for the swapchain.
 //If true is passed for the hintHDR parameter, it will return an HDR format IF the platform supports it
 //If false is passed or the platform does not support HDR a non HDR format is returned.
 //If true is passed for the hintSrgb parameter, it will return format that is will do gamma correction automatically
 //If false is passed for the hintSrgb parameter the gamma correction should be done as a postprocess step before submitting image to swapchain
-DECLARE_RENDERER_FUNCTION(TinyImageFormat, getSupportedSwapchainFormat, Renderer *pRenderer, const SwapChainDesc* pDesc, ColorSpace colorSpace)
-DECLARE_RENDERER_FUNCTION(uint32_t, getRecommendedSwapchainImageCount, Renderer* pRenderer, const WindowHandle* hwnd)
+TinyImageFormat getSupportedSwapchainFormat(Renderer* pRenderer, const SwapChainDesc* pDesc, ColorSpace colorSpace);
+uint32_t getRecommendedSwapchainImageCount(Renderer* pRenderer, const WindowHandle* hwnd);
 
 //indirect Draw functions
-DECLARE_RENDERER_FUNCTION(void, addIndirectCommandSignature, Renderer* pRenderer, const CommandSignatureDesc* pDesc, CommandSignature** ppCommandSignature)
-DECLARE_RENDERER_FUNCTION(void, removeIndirectCommandSignature, Renderer* pRenderer, CommandSignature* pCommandSignature)
-DECLARE_RENDERER_FUNCTION(void, cmdExecuteIndirect, Cmd* pCmd, CommandSignature* pCommandSignature, unsigned int maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset, Buffer* pCounterBuffer, uint64_t counterBufferOffset)
+void cmdExecuteIndirect(Cmd* pCmd, IndirectArgumentType type, unsigned int maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset, Buffer* pCounterBuffer, uint64_t counterBufferOffset);
 
+// Workgraph functions
+#if defined(ENABLE_WORKGRAPH)
+void addWorkgraph(Renderer* pRenderer, const WorkgraphDesc* pDesc, Workgraph** ppWorkgraph);
+void removeWorkgraph(Renderer* pRenderer, Workgraph* pWorkgraph);
+void cmdDispatchWorkgraph(Cmd* pCmd, const DispatchGraphDesc* pDesc);
+#endif
 /************************************************************************/
 // GPU Query Interface
 /************************************************************************/
-DECLARE_RENDERER_FUNCTION(void, getTimestampFrequency, Queue* pQueue, double* pFrequency)
-DECLARE_RENDERER_FUNCTION(void, addQueryPool, Renderer* pRenderer, const QueryPoolDesc* pDesc, QueryPool** ppQueryPool)
-DECLARE_RENDERER_FUNCTION(void, removeQueryPool, Renderer* pRenderer, QueryPool* pQueryPool)
-DECLARE_RENDERER_FUNCTION(void, cmdBeginQuery, Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
-DECLARE_RENDERER_FUNCTION(void, cmdEndQuery, Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
-DECLARE_RENDERER_FUNCTION(void, cmdResolveQuery, Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, uint32_t queryCount)
-DECLARE_RENDERER_FUNCTION(void, cmdResetQuery, Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, uint32_t queryCount)
-DECLARE_RENDERER_FUNCTION(void, getQueryData, Renderer* pRenderer, QueryPool* pQueryPool, uint32_t queryIndex, QueryData* pOutData)
+void getTimestampFrequency(Queue* pQueue, double* pFrequency);
+void initQueryPool(Renderer* pRenderer, const QueryPoolDesc* pDesc, QueryPool** ppQueryPool);
+void exitQueryPool(Renderer* pRenderer, QueryPool* pQueryPool);
+void cmdBeginQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery);
+void cmdEndQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery);
+void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, uint32_t queryCount);
+void cmdResetQuery(Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, uint32_t queryCount);
+void getQueryData(Renderer* pRenderer, QueryPool* pQueryPool, uint32_t queryIndex, QueryData* pOutData);
 /************************************************************************/
 // Stats Info Interface
 /************************************************************************/
-DECLARE_RENDERER_FUNCTION(void, calculateMemoryStats, Renderer* pRenderer, char** ppStats)
-DECLARE_RENDERER_FUNCTION(void, calculateMemoryUse, Renderer* pRenderer, uint64_t* usedBytes, uint64_t* totalAllocatedBytes)
-DECLARE_RENDERER_FUNCTION(void, freeMemoryStats, Renderer* pRenderer, char* pStats)
+void logMemoryStats(Renderer* pRenderer);
+void calculateMemoryUse(Renderer* pRenderer, uint64_t* usedBytes, uint64_t* totalAllocatedBytes);
 /************************************************************************/
 // Debug Marker Interface
 /************************************************************************/
-DECLARE_RENDERER_FUNCTION(void, cmdBeginDebugMarker, Cmd* pCmd, float r, float g, float b, const char* pName)
-DECLARE_RENDERER_FUNCTION(void, cmdEndDebugMarker, Cmd* pCmd)
-DECLARE_RENDERER_FUNCTION(void, cmdAddDebugMarker, Cmd* pCmd, float r, float g, float b, const char* pName)
-DECLARE_RENDERER_FUNCTION(void, cmdWriteMarker, Cmd* pCmd, const MarkerDesc* pDesc);
+void cmdBeginDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName);
+void cmdEndDebugMarker(Cmd* pCmd);
+void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName);
+void cmdWriteMarker(Cmd* pCmd, const MarkerDesc* pDesc);
 /************************************************************************/
 // Resource Debug Naming Interface
 /************************************************************************/
-DECLARE_RENDERER_FUNCTION(void, setBufferName, Renderer* pRenderer, Buffer* pBuffer, const char* pName)
-DECLARE_RENDERER_FUNCTION(void, setTextureName, Renderer* pRenderer, Texture* pTexture, const char* pName)
-DECLARE_RENDERER_FUNCTION(void, setRenderTargetName, Renderer* pRenderer, RenderTarget* pRenderTarget, const char* pName)
-DECLARE_RENDERER_FUNCTION(void, setPipelineName, Renderer* pRenderer, Pipeline* pPipeline, const char* pName)
+void setBufferName(Renderer* pRenderer, Buffer* pBuffer, const char* pName);
+void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName);
+void setRenderTargetName(Renderer* pRenderer, RenderTarget* pRenderTarget, const char* pName);
+void setPipelineName(Renderer* pRenderer, Pipeline* pPipeline, const char* pName);
 /************************************************************************/
 /************************************************************************/
 // clang-format on

@@ -29,7 +29,7 @@
 #include "../../../../Common_3/Application/Interfaces/IApp.h"
 #include "../../../../Common_3/Application/Interfaces/ICameraController.h"
 #include "../../../../Common_3/Application/Interfaces/IFont.h"
-#include "../../../../Common_3/Application/Interfaces/IInput.h"
+#include "../../../../Common_3/OS/Interfaces/IInput.h"
 #include "../../../../Common_3/Application/Interfaces/IProfiler.h"
 #include "../../../../Common_3/Application/Interfaces/IScreenshot.h"
 #include "../../../../Common_3/Application/Interfaces/IUI.h"
@@ -51,6 +51,14 @@
 #include "IGamePlugin.h"
 #if FORGE_CODE_HOT_RELOAD
 #define CR_HOST
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+    FORGE_API int systemRun(const char* command, const char** arguments, size_t argumentCount, FileStream* pFs);
+#ifdef __cplusplus
+}
+#endif
 #endif
 #include "../../../../Common_3/Application/ThirdParty/OpenSource/cr/cr.h"
 
@@ -63,143 +71,56 @@ int tfMainCodeReload(cr_plugin* ctx, cr_op operation);
 #endif
 
 #if defined(_WINDOWS) && FORGE_CODE_HOT_RELOAD
+#define VS_WHERE_PATH __FILE__ "/../../../../../Tools/vswhere.exe"
 // VisualStudio doesn't set any environment variable, to locate it's install path, you can have several VS installations.
 // This function uses a utility that comes with the VS installer, vswhere.exe, to get information about all the VS installation in this PC.
 static const char* findMsBuildPath()
 {
     // User can't change the installation while running VS, safe to cache it for the entire lifetime of the debug session.
-    static char cachedPath[FS_MAX_PATH] = {};
+    static char cachedPath[FS_MAX_PATH] = { 0 };
 
-    if (cachedPath[0] == 0)
+    if (cachedPath[0] != 0)
     {
-#if defined(AUTOMATED_TESTING)
-        bstring command = bdynfromcstr(fsGetResourceDirectory(RD_OTHER_FILES));
-        bstring commandAppend = bdynfromcstr("/../../../");
-        bconcat(&command, &commandAppend);
-        bdestroy(&commandAppend);
-#else
-        bstring            command = bempty();
-#endif
-        const char* args[4]{};
-        const char* msBuildSubpath = "";
-        char*       buffer = nullptr;
+        // already there
+        return cachedPath;
+    }
 
-        // Read text file to retrieve vswhere command and args
-        {
-            FileStream stream{};
-            bool       res = fsOpenStreamFromPath(RD_OTHER_FILES, "vswhere_args.txt", FM_READ, &stream);
-            ASSERT(res);
+    const char* msBuildSubpath = "/MSBuild/Current/Bin/MSBuild.exe";
+    const char* params[] = { "-latest",   "-version",        "\"[16, 17)\"", "-requires", "Microsoft.Component.MSBuild",
+                             "-property", "installationPath" };
 
-            ssize_t size = fsGetStreamFileSize(&stream);
-            ASSERT(size > 0);
+    const char* tempFilename = "tempMsBuildPath.txt";
 
-            buffer = (char*)tf_malloc(size);
-            size_t readSize = fsReadFromStream(&stream, buffer, size);
-            ASSERT(readSize == size);
+    // Run vswhere and output the installation path of VS to our temp file
+    FileStream fs{};
+    fsOpenStreamFromPath(RD_DEBUG, tempFilename, FM_WRITE, &fs);
+    const int result = systemRun(VS_WHERE_PATH, params, TF_ARRAY_COUNT(params), &fs);
+    fsCloseStream(&fs);
 
-            // VSWhere command
-            char* endPos = strchr(buffer, ' ');
-            ASSERT(endPos);
-            *endPos = '\0';
-
-            bstring vswhereStr = bdynfromcstr(buffer);
-            bconcat(&command, &vswhereStr);
-
-            // Arg 1
-            char* startPos = endPos + 1;
-            endPos = strchr(endPos + 2, '-');
-            ASSERT(endPos);
-            *(endPos - 1) = '\0';
-            args[0] = startPos;
-
-            // Arg 2
-            startPos = endPos;
-            endPos = strchr(endPos + 1, '-');
-            ASSERT(endPos);
-            *(endPos - 1) = '\0';
-            args[1] = startPos;
-
-            // Arg 3
-            startPos = endPos;
-            endPos = strchr(endPos + 1, '-');
-            ASSERT(endPos);
-            *(endPos - 1) = '\0';
-            args[2] = startPos;
-
-            // Arg 4
-            startPos = endPos;
-            endPos = strchr(endPos + 1, '\n');
-            ASSERT(endPos);
-
-            bool hasCR = *(endPos - 1) == '\r';
-            *(endPos - (hasCR ? 1 : 0)) = '\0';
-            endPos = hasCR ? endPos : endPos + 1;
-            args[3] = startPos;
-
-            // MSBuild subpath
-            startPos = endPos;
-            endPos = strchr(endPos, hasCR ? '\r' : '\n');
-            ASSERT(endPos);
-            *endPos = '\0';
-            msBuildSubpath = startPos + (hasCR ? 1 : 0);
-
-            bdestroy(&vswhereStr);
-
-            res = fsCloseStream(&stream);
-            ASSERT(res);
-        }
-
-        const char* tempFilename =
-            "tempMsBuildPath.txt"; // File where the output of vswhere.exe will be stored, the path to the VS installation folder.
-
-        const char* logDirectory = fsGetResourceDirectory(RD_LOG);
-        char        tempFilenamePath[FS_MAX_PATH] = {};
-        snprintf(tempFilenamePath, sizeof(tempFilenamePath), "%s\\%s", logDirectory, tempFilename);
-
-        // Run vswhere and output the installation path of VS to our temp file
-        const int result = systemRun(bdata(&command), args, sizeof(args) / sizeof(args[0]), tempFilenamePath);
-        bdestroy(&command);
+    if (fsOpenStreamFromPath(RD_DEBUG, tempFilename, FM_READ, &fs))
+    {
+        char         buffer[FS_MAX_PATH] = { 0 };
+        const size_t readSize = fsReadFromStream(&fs, buffer, FS_MAX_PATH);
         if (result == 0)
         {
-            // Read install path from the temp file
-            FileStream fileStream;
-            if (fsOpenStreamFromPath(RD_LOG, tempFilename, FileMode::FM_READ, &fileStream))
-            {
-                const size_t readSize = fsReadFromStream(&fileStream, cachedPath, sizeof(cachedPath));
-                for (uint32_t i = 0; i < sizeof(cachedPath); ++i)
-                {
-                    if (cachedPath[i] == '\n' || cachedPath[i] == '\r')
-                    {
-                        cachedPath[i] = '\0';
-                        break;
-                    }
-                }
+            if (buffer[readSize - 1] == '\r' || buffer[readSize - 1] == '\n')
+                buffer[readSize - 1] = '\0';
 
-                // WE have the base path of the installation, we just need to get to msbuild.exe
-                if (readSize + strlen(msBuildSubpath) < sizeof(cachedPath))
-                {
-                    strcat(cachedPath, msBuildSubpath);
-                    LOGF(eINFO, "Found Visual Studio 2019 installed at: %s", cachedPath);
-                    tf_free(buffer);
-                    return cachedPath;
-                }
-                else
-                {
-                    tf_free(buffer);
-                    return nullptr;
-                }
-            }
-            else
-            {
-                tf_free(buffer);
-                return nullptr;
-            }
+            if (buffer[readSize - 2] == '\r' || buffer[readSize - 2] == '\n')
+                buffer[readSize - 2] = '\0';
+
+            strcat_s(cachedPath, buffer);
+            strcat_s(cachedPath, msBuildSubpath);
         }
         else
         {
-            tf_free(buffer);
-            return nullptr;
+            LOGF(eERROR, "Error running vswhere: %s", buffer);
         }
+        fsCloseStream(&fs);
+    }
+    else
+    {
+        LOGF(eERROR, "vswhere didn't write to file RD_DEBUG/%s or can't open the file", tempFilename);
     }
 
     return cachedPath;
@@ -214,7 +135,6 @@ struct SpriteData
 };
 
 // COMPONENTS
-
 ECS_COMPONENT_DECLARE(AppDataComponent);
 ECS_COMPONENT_DECLARE(WorldBoundsComponent);
 ECS_COMPONENT_DECLARE(PositionComponent);
@@ -281,10 +201,11 @@ UIComponent* pGUIWindow = nullptr;
 
 uint32_t gFontID = 0;
 
-const char* gTestScripts[] = { "Test_HotReload.lua" };
+const char* gTestScripts[] = { "19_CodeHotReload/Test_HotReload.lua" };
 uint32_t    gCurrentScriptIndex = 0;
 void        RunScript(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     LuaScriptDesc runDesc = {};
     runDesc.pScriptFileName = gTestScripts[gCurrentScriptIndex];
     luaQueueScriptToRun(&runDesc);
@@ -366,11 +287,11 @@ static void AvoidanceSystem(ecs_iter_t* it)
             SpriteComponent*   avoidSprites = ecs_term(&avoidIter, SpriteComponent, 3);
             AvoidComponent*    avoidDistances = ecs_term(&avoidIter, AvoidComponent, 4);
 
-            for (int i = 0; i < avoidIter.count; i++)
+            for (int j = 0; j < avoidIter.count; j++)
             {
-                const PositionComponent& avoidPosition = avoidPositions[i];
-                const SpriteComponent&   avoidSprite = avoidSprites[i];
-                const AvoidComponent&    avoidDistance = avoidDistances[i];
+                const PositionComponent& avoidPosition = avoidPositions[j];
+                const SpriteComponent&   avoidSprite = avoidSprites[j];
+                const AvoidComponent&    avoidDistance = avoidDistances[j];
 
                 Vector2     v = pos.pos - avoidPosition.pos;
                 const float sumRadius = avoidDistance.distance + sprite.scale * 0.5f;
@@ -430,8 +351,9 @@ void FillRenderDataSpritesSystem(ecs_iter_t* it)
 
 void FillRenderDataAvoidersSystem(ecs_iter_t* it)
 {
-    FillRenderData(it, 0); // Put Avoidance objects first, when running on with GLES (Android) we might not have enough size in the instance
-                           // UBO to hold all objects, this way we ensure the number of objects that might not be visible are sprites
+    FillRenderData(it,
+                   0); // Put Avoidance objects first, when running on with GLES (Android) we might not have enough size in the instance
+                       // UBO to hold all objects, this way we ensure the number of objects that might not be visible are sprites
 }
 
 struct CreationData
@@ -442,6 +364,7 @@ struct CreationData
 
 static void createEntity(ecs_world_t* world, CreationData* pData, uintptr_t i)
 {
+    UNREF_PARAM(i);
     ecs_entity_t entityId = ecs_new_id(world);
 
     float x = randomFloat(pData->bounds->xMin, pData->bounds->xMax);
@@ -484,43 +407,31 @@ class CodeHotReload: public IApp
 public:
     bool Init()
     {
-        // FILE PATHS
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Fonts");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
-        fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_OTHER_FILES, "");
-        fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_SCREENSHOTS, "Screenshots");
-        fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_DEBUG, "Debug");
-
         RendererDesc settings;
         memset(&settings, 0, sizeof(settings));
-        settings.mGLESSupported = true;
+        initGPUConfiguration(settings.pExtendedSettings);
         initRenderer(GetName(), &settings, &pRenderer);
         // check for init success
         if (!pRenderer)
-            return false;
-
-        // Code Hot Reload only supported in Debug mode.
-        if (fsGetResourceDirectory(RD_LOG)[0] == 0)
         {
-            ShowUnsupportedMessage("Code Hot Reload is not supported in Release mode.");
+            ShowUnsupportedMessage("Failed To Initialize renderer!");
             return false;
         }
+        setupGPUConfigurationPlatformParameters(pRenderer, settings.pExtendedSettings);
 
         QueueDesc queueDesc = {};
         queueDesc.mType = QUEUE_TYPE_GRAPHICS;
         queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
-        addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
+        initQueue(pRenderer, &queueDesc, &pGraphicsQueue);
 
         GpuCmdRingDesc cmdRingDesc = {};
         cmdRingDesc.pQueue = pGraphicsQueue;
         cmdRingDesc.mPoolCount = gDataBufferCount;
         cmdRingDesc.mCmdPerPoolCount = 1;
         cmdRingDesc.mAddSyncPrimitives = true;
-        addGpuCmdRing(pRenderer, &cmdRingDesc, &gGraphicsCmdRing);
+        initGpuCmdRing(pRenderer, &cmdRingDesc, &gGraphicsCmdRing);
 
-        addSemaphore(pRenderer, &pImageAcquiredSemaphore);
+        initSemaphore(pRenderer, &pImageAcquiredSemaphore);
 
         initResourceLoaderInterface(pRenderer);
 
@@ -542,11 +453,9 @@ public:
         // Initialize micro profiler and its UI.
         ProfilerDesc profiler = {};
         profiler.pRenderer = pRenderer;
-        profiler.mWidthUI = mSettings.mWidth;
-        profiler.mHeightUI = mSettings.mHeight;
         initProfiler(&profiler);
 
-        gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
+        gGpuProfileToken = initGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
 
         SamplerDesc samplerDesc = { FILTER_LINEAR,
                                     FILTER_LINEAR,
@@ -610,114 +519,6 @@ public:
         textureDesc.pFileName = "sprites.tex";
         addResource(&textureDesc, NULL);
 
-        /************************************************************************/
-        // GUI
-        /************************************************************************/
-        UIComponentDesc guiDesc = {};
-        guiDesc.mStartPosition = vec2(mSettings.mWidth * 0.01f, mSettings.mHeight * 0.1f);
-        uiCreateComponent("CodeHotReload", &guiDesc, &pGUIWindow);
-
-#if FORGE_CODE_HOT_RELOAD
-#if !defined(__APPLE__)
-        const uint32_t numScripts = sizeof(gTestScripts) / sizeof(gTestScripts[0]);
-        LuaScriptDesc  scriptDescs[numScripts] = {};
-        for (uint32_t i = 0; i < numScripts; ++i)
-            scriptDescs[i].pScriptFileName = gTestScripts[i];
-        luaDefineScripts(scriptDescs, numScripts);
-
-        DropdownWidget ddTestScripts;
-        ddTestScripts.pData = &gCurrentScriptIndex;
-        ddTestScripts.pNames = gTestScripts;
-        ddTestScripts.mCount = sizeof(gTestScripts) / sizeof(gTestScripts[0]);
-        luaRegisterWidget(uiCreateComponentWidget(pGUIWindow, "Test Scripts", &ddTestScripts, WIDGET_TYPE_DROPDOWN));
-
-        ButtonWidget bRunScript;
-        UIWidget*    pRunScript = uiCreateComponentWidget(pGUIWindow, "Run", &bRunScript, WIDGET_TYPE_BUTTON);
-        uiSetWidgetOnEditedCallback(pRunScript, nullptr, RunScript);
-        luaRegisterWidget(pRunScript);
-#endif
-#endif
-
-        CheckboxWidget Checkbox;
-        Checkbox.pData = &gMultiThread;
-        luaRegisterWidget(uiCreateComponentWidget(pGUIWindow, "Threading", &Checkbox, WIDGET_TYPE_CHECKBOX));
-
-#if FORGE_CODE_HOT_RELOAD
-#if defined(__APPLE__)
-        LabelWidget labelWidget;
-        uiCreateComponentWidget(pGUIWindow, "Use Command+B in XCode to rebuild the hot-reloadable library.", &labelWidget,
-                                WIDGET_TYPE_LABEL);
-#else
-        ButtonWidget       button;
-        UIWidget*          widget = uiCreateComponentWidget(pGUIWindow, "Rebuild Game", &button, WIDGET_TYPE_BUTTON);
-        static WindowDesc* pWindowDesc = pWindow;
-        widget->pOnEdited = [](void* pUserData)
-        {
-            const char* logDirectory = fsGetResourceDirectory(RD_LOG);
-            char        buildLogFile[FS_MAX_PATH] = {};
-            snprintf(buildLogFile, sizeof(buildLogFile), "%s\\%s", logDirectory, "CodeReloadBuild.log");
-
-            const char* buildCommand = NULL;
-            const char* args[3] = {};
-
-#if defined(_WINDOWS)
-            buildCommand = findMsBuildPath();
-
-            if (buildCommand == nullptr)
-            {
-                errorMessagePopup("Couldn't find vswhere.exe",
-                                  "We couldn't find the Visual Studio installer in the default installation path. Without that we can't "
-                                  "locate msbuild.exe",
-                                  &pWindowDesc->handle, NULL);
-                return;
-            }
-
-            // The build settup for The Forge for PC contains all project files in the same directory,
-            // this is why we don't need any path in here, Visual Studio uses the project directory as
-            // the Working Directory when launching programs. Use relative path from executable during automated testing.
-#if defined(AUTOMATED_TESTING)
-            args[0] = "../../../" GAME_PLUGIN_NAME ".vcxproj";
-#else
-            args[0] = GAME_PLUGIN_NAME ".vcxproj";
-#endif
-            args[1] = "-property:Platform=x64";
-#ifdef FORGE_DEBUG
-            args[2] = "-property:Configuration=Debug";
-#else
-            args[2] = "-property:Configuration=Release";
-#endif
-#elif defined(__linux__)
-
-            // No need to set the configuration in linux CodeLite updates the makefile based on the configuration,
-            // running with this makefile will compile for the same configuration we are currently working on.
-
-            buildCommand = "make";
-            args[0] = "all -j 8";                      // Build using 8 jobs (magic number)
-#if defined(AUTOMATED_TESTING)
-            args[1] = "--directory=19_CodeHotReload/"; // Makefile is stored one down the codelite directory
-#else
-            args[1] = "--directory=../"; // Makefile is stored one up the debug directory
-#endif
-            args[2] = "-f " GAME_PLUGIN_NAME ".mk";    // Automated testing path to makefile
-#endif
-
-            ASSERT(buildCommand);
-            const int buildResult = systemRun(buildCommand, args, 3, buildLogFile);
-            if (buildResult != 0)
-            {
-                LOGF(eWARNING, "Couldn't rebuild the project. Build log file is '%s'", buildLogFile);
-
-                char message[1024] = {};
-                snprintf(message, sizeof(message), "Compilation of the Hot Reloadable module failed.\nPlease check the log file in:\n%s",
-                         buildLogFile);
-
-                errorMessagePopup("Build Failed", message, &pWindowDesc->handle, NULL);
-            }
-        };
-        luaRegisterWidget(widget);
-#endif // defined(__APPLE__)
-#endif // FORGE_CODE_HOT_RELOAD
-
         // Hot Reloading initialization
         gEngineCallbacks.Log = [](LogLevel logLevel, const char* message) { LOGF(logLevel, "%s", message); };
 
@@ -727,13 +528,11 @@ public:
         gCrGamePlugin.userdata = &gGamePlugin;
 
 #if FORGE_CODE_HOT_RELOAD
-        // use RD_LOG to load next to .app location
+        // assuming it's next to the executable
         // this will need to be customized depending on
         // whether we're distributing (should be in bundle)
         // or development (should be external to support hot reloading)
-        const char* installDir = fsGetResourceDirectory(RD_LOG);
-        char        gamePluginPath[FS_MAX_PATH] = {};
-        snprintf(gamePluginPath, sizeof(gamePluginPath), "%s/%s", installDir, GAME_PLUGIN_ADD_EXTENSION(GAME_PLUGIN_NAME));
+        char gamePluginPath[FS_MAX_PATH] = "./" GAME_PLUGIN_ADD_EXTENSION(GAME_PLUGIN_NAME);
         if (!cr_plugin_open(gCrGamePlugin, gamePluginPath))
         {
             ASSERT(false);
@@ -812,97 +611,11 @@ public:
 
         gDrawSpriteCount = SpriteEntityCount + AvoidCount;
 
-        InputSystemDesc inputDesc = {};
-        inputDesc.pRenderer = pRenderer;
-        inputDesc.pWindow = pWindow;
-        inputDesc.pJoystickTexture = NULL; // Disable Virtual Joystick
-        if (!initInputSystem(&inputDesc))
-            return false;
-
         // App Actions
-        InputActionDesc actionDesc = { DefaultInputActions::DUMP_PROFILE_DATA,
-                                       [](InputActionContext* ctx)
-                                       {
-                                           dumpProfileData(((Renderer*)ctx->pUserData)->pName);
-                                           return true;
-                                       },
-                                       pRenderer };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TOGGLE_FULLSCREEN,
-                       [](InputActionContext* ctx)
-                       {
-                           WindowDesc* winDesc = ((IApp*)ctx->pUserData)->pWindow;
-                           if (winDesc->fullScreen)
-                               winDesc->borderlessWindow
-                                   ? setBorderless(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect))
-                                   : setWindowed(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect));
-                           else
-                               setFullscreen(winDesc);
-                           return true;
-                       },
-                       this };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::EXIT, [](InputActionContext* ctx)
-                       {
-                           requestShutdown();
-                           return true;
-                       } };
-        addInputAction(&actionDesc);
-        InputActionCallback onUIInput = [](InputActionContext* ctx)
-        {
-            if (ctx->mActionId > UISystemInputActions::UI_ACTION_START_ID_)
-            {
-                uiOnInput(ctx->mActionId, ctx->mBool, ctx->pPosition, &ctx->mFloat2);
-            }
-            return true;
-        };
-
-        actionDesc = { DefaultInputActions::CAPTURE_INPUT,
-                       [](InputActionContext* ctx)
-                       {
-                           setEnableCaptureInput(!uiIsFocused() && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
-                           return true;
-                       },
-                       NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA,
-                       [](InputActionContext* ctx)
-                       {
-                           gGamePlugin.mAppData->cameraMovementDir = f2Tov2(ctx->mFloat2);
-                           return true;
-                       },
-                       this };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::UI_MOUSE_SCROLL_UP,
-                       [](InputActionContext* ctx)
-                       {
-                           if (!uiIsFocused())
-                               gGamePlugin.mAppData->cameraZoom = -ctx->mFloat;
-                           return true;
-                       },
-                       this };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::UI_MOUSE_SCROLL_DOWN,
-                       [](InputActionContext* ctx)
-                       {
-                           if (!uiIsFocused())
-                               gGamePlugin.mAppData->cameraZoom = ctx->mFloat;
-                           return true;
-                       },
-                       this };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::ROTATE_CAMERA,
-                       [](InputActionContext* ctx)
-                       {
-                           if (*ctx->pCaptured && !uiIsFocused())
-                               gGamePlugin.mAppData->cameraZoom = -ctx->mFloat2[1];
-                           return true;
-                       },
-                       this };
-        addInputAction(&actionDesc);
-        GlobalInputActionDesc globalInputActionDesc = { GlobalInputActionDesc::ANY_BUTTON_ACTION, onUIInput, this };
-        setGlobalInputAction(&globalInputActionDesc);
-
+        extern bool gVirtualJoystickEnable;
+        gVirtualJoystickEnable = false;
+        AddCustomInputBindings();
+        initScreenshotInterface(pRenderer, pGraphicsQueue);
         gFrameIndex = 0;
         waitForAllResourceLoads();
 
@@ -911,6 +624,7 @@ public:
 
     void Exit()
     {
+        exitScreenshotInterface();
 #if FORGE_CODE_HOT_RELOAD
         cr_plugin_close(gCrGamePlugin);
 #else
@@ -939,17 +653,17 @@ public:
 
         removeSampler(pRenderer, pLinearClampSampler);
 
-        removeSemaphore(pRenderer, pImageAcquiredSemaphore);
-        removeGpuCmdRing(pRenderer, &gGraphicsCmdRing);
+        exitSemaphore(pRenderer, pImageAcquiredSemaphore);
+        exitGpuCmdRing(pRenderer, &gGraphicsCmdRing);
 
         tf_free(gSpriteData);
 
-        exitInputSystem();
         gSpriteData = NULL;
 
         exitResourceLoaderInterface(pRenderer);
-        removeQueue(pRenderer, pGraphicsQueue);
+        exitQueue(pRenderer, pGraphicsQueue);
         exitRenderer(pRenderer);
+        exitGPUConfiguration();
         pRenderer = NULL;
     }
 
@@ -964,6 +678,116 @@ public:
 
         if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
         {
+            loadProfilerUI(mSettings.mWidth, mSettings.mHeight);
+
+            UIComponentDesc guiDesc = {};
+            guiDesc.mStartPosition = vec2(mSettings.mWidth * 0.01f, mSettings.mHeight * 0.2f);
+            uiAddComponent("CodeHotReload", &guiDesc, &pGUIWindow);
+
+#if FORGE_CODE_HOT_RELOAD
+#if !defined(__APPLE__)
+            const uint32_t numScripts = sizeof(gTestScripts) / sizeof(gTestScripts[0]);
+            LuaScriptDesc  scriptDescs[numScripts] = {};
+            for (uint32_t i = 0; i < numScripts; ++i)
+                scriptDescs[i].pScriptFileName = gTestScripts[i];
+            luaDefineScripts(scriptDescs, numScripts);
+
+            DropdownWidget ddTestScripts;
+            ddTestScripts.pData = &gCurrentScriptIndex;
+            ddTestScripts.pNames = gTestScripts;
+            ddTestScripts.mCount = sizeof(gTestScripts) / sizeof(gTestScripts[0]);
+            luaRegisterWidget(uiAddComponentWidget(pGUIWindow, "Test Scripts", &ddTestScripts, WIDGET_TYPE_DROPDOWN));
+
+            ButtonWidget bRunScript;
+            UIWidget*    pRunScript = uiAddComponentWidget(pGUIWindow, "Run", &bRunScript, WIDGET_TYPE_BUTTON);
+            uiSetWidgetOnEditedCallback(pRunScript, nullptr, RunScript);
+            luaRegisterWidget(pRunScript);
+#endif
+#endif
+
+            CheckboxWidget Checkbox;
+            Checkbox.pData = &gMultiThread;
+            luaRegisterWidget(uiAddComponentWidget(pGUIWindow, "Threading", &Checkbox, WIDGET_TYPE_CHECKBOX));
+
+#if FORGE_CODE_HOT_RELOAD
+#if defined(__APPLE__)
+            LabelWidget labelWidget;
+            uiAddComponentWidget(pGUIWindow, "Use Command+B in XCode to rebuild CodeHotReload_Main.", &labelWidget, WIDGET_TYPE_LABEL);
+#else
+            ButtonWidget       button;
+            UIWidget*          widget = uiAddComponentWidget(pGUIWindow, "Rebuild Game", &button, WIDGET_TYPE_BUTTON);
+            static WindowDesc* pWindowDesc = pWindow;
+            widget->pOnEdited = [](void* pUserData)
+            {
+                UNREF_PARAM(pUserData);
+
+                const char* buildCommand = NULL;
+                const char* args[4] = {};
+                size_t      buildArgUsed;
+
+#if defined(_WINDOWS)
+                buildCommand = findMsBuildPath();
+
+                if (buildCommand == nullptr) // -V547
+                {
+                    errorMessagePopup(
+                        "Couldn't find vswhere.exe",
+                        "We couldn't find the Visual Studio installer in the default installation path. Without that we can't "
+                        "locate msbuild.exe",
+                        &pWindowDesc->handle, NULL);
+                    return;
+                }
+
+                // The build settup for The Forge for PC contains all project files in the same directory,
+                // this is why we don't need any path in here, Visual Studio uses the project directory as
+                // the Working Directory when launching programs. Use relative path from executable during automated testing.
+                args[0] = "../../../" GAME_PLUGIN_NAME ".vcxproj";
+                args[1] = "-property:Platform=x64";
+#ifdef FORGE_DEBUG
+                args[2] = "-property:Configuration=Debug";
+#else
+                args[2] = "-property:Configuration=Release";
+#endif
+                buildArgUsed = 3;
+#elif defined(__linux__)
+
+                // No need to set the configuration in linux CodeLite updates the makefile based on the configuration,
+                // running with this makefile will compile for the same configuration we are currently working on.
+
+                buildCommand = "make";
+                args[0] = "all";
+                args[1] = "--jobs=8";
+                // args[0] = "all -j 8";                      // Build using 8 jobs (magic number)
+#if defined(AUTOMATED_TESTING)
+                args[2] = "--directory=19_CodeHotReload/"; // Makefile is stored one down the codelite directory
+#else
+                args[2] = "--directory=../"; // Makefile is stored one up the debug directory
+#endif
+                args[3] = "--file=" GAME_PLUGIN_NAME ".mk";
+                buildArgUsed = 4;
+#endif
+
+                char       buildLogFile[FS_MAX_PATH] = "CodeReloadBuild.log";
+                FileStream fs{};
+                fsOpenStreamFromPath(RD_DEBUG, buildLogFile, FM_WRITE, &fs);
+                const int buildResult = systemRun(buildCommand, args, buildArgUsed, &fs);
+                fsCloseStream(&fs);
+
+                if (buildResult != 0)
+                {
+                    LOGF(eWARNING, "Couldn't rebuild the project. Build log file is RD_DEBUG/'%s'", buildLogFile);
+
+                    char message[1024] = {};
+                    snprintf(message, sizeof(message),
+                             "Compilation of the Hot Reloadable module failed.\nPlease check the log file in: RD_DEBUG/%s", buildLogFile);
+
+                    errorMessagePopup("Build Failed", message, &pWindowDesc->handle, NULL);
+                }
+            };
+            luaRegisterWidget(widget);
+#endif // defined(__APPLE__)
+#endif // FORGE_CODE_HOT_RELOAD
+
             if (!addSwapChain())
                 return false;
         }
@@ -989,8 +813,6 @@ public:
         fontLoad.mLoadType = pReloadDesc->mType;
         loadFontSystem(&fontLoad);
 
-        initScreenshotInterface(pRenderer, pGraphicsQueue);
-
         return true;
     }
 
@@ -1009,6 +831,8 @@ public:
         if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
         {
             removeSwapChain(pRenderer, pSwapChain);
+            uiRemoveComponent(pGUIWindow);
+            unloadProfilerUI();
         }
 
         if (pReloadDesc->mType & RELOAD_TYPE_SHADER)
@@ -1017,8 +841,6 @@ public:
             removeRootSignatures();
             removeShaders();
         }
-
-        exitScreenshotInterface();
     }
 
     void Update(float deltaTime)
@@ -1032,9 +854,31 @@ public:
         tfMainCodeReload(&gCrGamePlugin, CR_STEP);
 #endif
 
-        updateInputSystem(deltaTime, mSettings.mWidth, mSettings.mHeight);
+        if (!uiIsFocused())
+        {
+            gGamePlugin.mAppData->cameraMovementDir = { inputGetValue(0, CUSTOM_MOVE_X), inputGetValue(0, CUSTOM_MOVE_Y) };
+            gGamePlugin.mAppData->cameraZoom = -inputGetValue(0, CUSTOM_LOOK_Y);
+            if (inputGetValue(0, CUSTOM_TOGGLE_FULLSCREEN))
+            {
+                toggleFullscreen(pWindow);
+            }
+            if (inputGetValue(0, CUSTOM_TOGGLE_UI))
+            {
+                uiToggleActive();
+            }
+            if (inputGetValue(0, CUSTOM_DUMP_PROFILE))
+            {
+                dumpProfileData(GetName());
+            }
+            if (inputGetValue(0, CUSTOM_EXIT))
+            {
+                requestShutdown();
+            }
+        }
 
         gGamePlugin.mGame->UpdateCamera(&gGamePlugin, deltaTime);
+        gGamePlugin.mAppData->cameraMovementDir = {};
+        gGamePlugin.mAppData->cameraZoom = {};
 
         WorldBoundsComponent* bounds = ecs_singleton_get_mut(gECSWorld, WorldBoundsComponent);
         gGamePlugin.mGame->UpdateWorldBounds(bounds, deltaTime);
@@ -1048,8 +892,8 @@ public:
         }
 
         // We expose a pointer to AppDataComponent in GamePlugin so that we can hadle inputs in the hot-reloadable code.
-        // We lazily notify flecs about possible changes, ideally we should have this call in the hot reloadable module by compiling flecs
-        // to dll.
+        // We lazily notify flecs about possible changes, ideally we should have this call in the hot reloadable module by compiling
+        // flecs to dll.
         ecs_singleton_modified(gECSWorld, AppDataComponent);
 
         ecs_progress(gECSWorld, deltaTime * 3.0f);
@@ -1057,7 +901,7 @@ public:
 
     void Draw()
     {
-        if (pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
+        if ((bool)pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
         {
             waitQueueIdle(pGraphicsQueue);
             ::toggleVSync(pRenderer, &pSwapChain);
@@ -1152,7 +996,7 @@ public:
         submitDesc.pSignalFence = elem.pFence;
         queueSubmit(pGraphicsQueue, &submitDesc);
         QueuePresentDesc presentDesc = {};
-        presentDesc.mIndex = swapchainImageIndex;
+        presentDesc.mIndex = (uint8_t)swapchainImageIndex;
         presentDesc.mWaitSemaphoreCount = 1;
         presentDesc.ppWaitSemaphores = &elem.pSemaphore;
         presentDesc.pSwapChain = pSwapChain;
@@ -1213,8 +1057,8 @@ public:
     {
         // TODO: rename to sprite
         ShaderLoadDesc spriteShader = {};
-        spriteShader.mStages[0].pFileName = "basic.vert";
-        spriteShader.mStages[1].pFileName = "basic.frag";
+        spriteShader.mVert.pFileName = "basic.vert";
+        spriteShader.mFrag.pFileName = "basic.frag";
 
         addShader(pRenderer, &spriteShader, &pSpriteShader);
     }
